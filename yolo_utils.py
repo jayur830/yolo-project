@@ -40,3 +40,13 @@ def convert_yolo_to_abs(
         int(grid_cell_width * (grid_x + x)) + int(w * img_width),
         int(grid_cell_height * (grid_y + y)) + int(h * img_height)
     ]
+
+
+def high_confidence_vector(tensor, threshold=0.5):
+    data = []
+    for n in range(tensor.shape[0]):
+        for h in range(tensor.shape[1]):
+            for w in range(tensor.shape[2]):
+                if tensor[n, h, w, 4] >= threshold:
+                    data.append([w, h] + tensor[n, h, w, :4].tolist())
+    return data

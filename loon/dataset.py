@@ -1,10 +1,9 @@
-from glob import glob
-
 import cv2
 import numpy as np
 
-from yolo.maplestory_loon_v2.yolo_converter import convert_abs_to_yolo
-from yolo.maplestory_loon_v2.common import factor, grid_width, grid_height
+from yolo.loon.common import grid_width, grid_height
+from yolo.yolo_utils import convert_abs_to_yolo
+from glob import glob
 
 
 def load_data():
@@ -26,8 +25,7 @@ def load_data():
             labels = [label.split(" ") for label in labels]
             labels = [(int(label[0]), int(float(label[1]) * img.shape[1]), int(float(label[2]) * img.shape[0]), int(float(label[3]) * img.shape[1]), int(float(label[4]) * img.shape[0])) for label in labels]
 
-        label_tensor = np.zeros(shape=(grid_height, grid_width, 10))
-        label_tensor[:, :, 9] = 1.
+        label_tensor = np.zeros(shape=(grid_height, grid_width, 9), dtype=np.float32)
         for label in labels:
             x1, y1, x2, y2 = \
                 target_width * (label[1] - int(label[3] / 2)) / img.shape[1], \
@@ -36,13 +34,27 @@ def load_data():
                 target_height * (label[2] + int(label[4] / 2)) / img.shape[0]
             grid_x, grid_y, x, y, w, h = convert_abs_to_yolo(target_width, target_height, grid_width, grid_height, [x1, y1, x2 - x1, y2 - y1])
 
-            label_tensor[grid_y, grid_x, 0] = x
-            label_tensor[grid_y, grid_x, 1] = y
-            label_tensor[grid_y, grid_x, 2] = w
-            label_tensor[grid_y, grid_x, 3] = h
-            label_tensor[grid_y, grid_x, 4] = 1.
-            label_tensor[grid_y, grid_x, 9] = 0
-            label_tensor[grid_y, grid_x, 5 + int(label[0])] = 1.
-        data_y.append(label_tensor * factor)
+            # x1, y1, x2, y2 = convert_yolo_to_abs(target_width, target_height, grid_width, grid_height, [grid_x, grid_y, x, y, w, h])
 
-    return np.array(data_x), np.array(data_y)
+            # print(x, y, w, h)
+            # input('a')
+            label_tensor[grid_y, grid_x, 0] = 1.
+            label_tensor[grid_y, grid_x, 1] = x
+            label_tensor[grid_y, grid_x, 2] = y
+            label_tensor[grid_y, grid_x, 3] = w
+            label_tensor[grid_y, grid_x, 4] = h
+            label_tensor[grid_y, grid_x, 5 + int(label[0])] = 1.
+
+            # img = cv2.rectangle(
+            #     img=img,
+            #     pt1=(int(x1), int(y1)),
+            #     pt2=(int(x2), int(y2)),
+            #     color=(0, 0, 255),
+            #     thickness=2)
+
+        data_y.append(label_tensor)
+
+        # cv2.imshow("test", img)
+        # cv2.waitKey()
+
+    return np.asarray(data_x), np.asarray(data_y)
