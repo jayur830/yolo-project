@@ -1,13 +1,13 @@
 import tensorflow as tf
 import cv2
 
-from loon.dataset import load_data
-from loon.model import yolo_model
+from mask_detection.dataset import load_data
+from mask_detection.model import yolo_model
 from utils import gpu_init, high_confidence_vector, convert_yolo_to_abs
-from loon.vars import target_width, target_height, grid_width_ratio, grid_height_ratio
+from mask_detection.vars import target_width, target_height, grid_width_ratio, grid_height_ratio
 
 step = 0
-step_interval = 10
+step_interval = 50
 batch_size = 2
 
 
@@ -34,8 +34,8 @@ if __name__ == '__main__':
                 x1, y1, x2, y2 = convert_yolo_to_abs(target_width, target_height, grid_width_ratio, grid_height_ratio, vector)
                 img = cv2.rectangle(
                     img=img,
-                    pt1=(round(x1), round(y1)),
-                    pt2=(round(x2), round(y2)),
+                    pt1=(int(x1), int(y1)),
+                    pt2=(int(x2), int(y2)),
                     color=(0, 0, 255),
                     thickness=2)
             cv2.imshow("test", img)

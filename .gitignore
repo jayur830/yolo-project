@@ -1,5 +1,6 @@
-__pycache__/
-plate_number/indian_eu_br_us_plates_compressed/
-/loon_rpn_split/
-loon/loon_rpn_split/
-model.h5
+annotations/
+images/
+loon_rpn_split/
+__pycache__
+.idea/
+venv/
