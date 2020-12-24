@@ -5,3 +5,4 @@ lane_day_*/
 __pycache__
 .idea/
 venv/
+test.py
