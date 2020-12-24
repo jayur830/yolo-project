@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from utils import yolo_loss, mean_absolute_log_error
+from losses import yolo_loss
 from mask_detection.vars import target_width, target_height
 
 

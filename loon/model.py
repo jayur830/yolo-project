@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from utils import yolo_loss
+from losses import yolo_loss
 from loon.vars import target_width, target_height
 
 
