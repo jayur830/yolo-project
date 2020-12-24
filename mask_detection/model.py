@@ -89,15 +89,7 @@ def yolo_model(kernel_initializer: str = "he_normal"):
     ])
     model.summary()
     model.compile(
-        optimizer=tf.optimizers.Adam(learning_rate=.01),
-        loss=yolo_loss,
-        # loss=mean_absolute_log_error,
-        # loss=sum_squared_error,
-        # loss=tf.keras.losses.mean_squared_error,
-        # loss=tf.keras.losses.mean_squared_logarithmic_error,
-        # loss=tf.keras.losses.mean_absolute_error,
-        # loss=tf.keras.losses.mean_absolute_percentage_error,
-        # loss=tf.keras.losses.binary_crossentropy,
-        metrics=["acc"])
+        optimizer=tf.optimizers.Adam(learning_rate=1e-2),
+        loss=yolo_loss)
 
     return model
