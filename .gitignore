@@ -1,6 +1,7 @@
 annotations/
 images/
 loon_rpn_split/
+lane_day_*/
 __pycache__
 .idea/
 venv/
