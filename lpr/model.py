@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from losses import yolo_loss, yolo_mean_absolute_log_error, yolo_mean_squared_log_error
+from losses import yolo_loss, yolo_mean_absolute_log_error, yolo_mean_squared_log_error, YoloLoss, jotganzi_loss
 from lpr.vars import target_width, target_height
 
 
@@ -91,5 +91,8 @@ def yolo_model(kernel_initializer: str = "he_normal"):
     model.compile(
         optimizer=tf.optimizers.Adam(learning_rate=1e-2),
         loss=yolo_loss)
+        # loss=YoloLoss())
+        # loss=jotganzi_loss)
+
 
     return model

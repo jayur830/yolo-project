@@ -44,4 +44,9 @@ def load_data():
 
         y_data.append(label_tensor)
 
-    return np.asarray(x_data), np.asarray(y_data)
+    x_data, y_data = np.asarray(x_data), np.asarray(y_data)
+    indexes = np.arange(x_data.shape[0])
+    np.random.shuffle(indexes)
+    x_data, y_data = x_data[indexes], y_data[indexes]
+
+    return (x_data[:int(x_data.shape[0] * .8)], y_data[:int(y_data.shape[0] * .8)]), (x_data[int(x_data.shape[0] * .8):], y_data[int(y_data.shape[0] * .8):])

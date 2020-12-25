@@ -12,7 +12,7 @@ batch_size = 2
 
 
 if __name__ == '__main__':
-    gpu_init()
+    # gpu_init()
 
     (x_train, y_train), (x_test, y_test) = load_data()
     model = yolo_model()
@@ -38,6 +38,14 @@ if __name__ == '__main__':
                     pt2=(round(x2), round(y2)),
                     color=(0, 0, 255),
                     thickness=2)
+                img = cv2.putText(
+                    img=img,
+                    text="License plate",
+                    org=(round(x1), round(y1) - 5),
+                    fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                    fontScale=.5,
+                    color=(0, 0, 255),
+                    thickness=2)
             cv2.imshow("test", img)
             cv2.waitKey(1)
         step += batch_size
@@ -60,6 +68,14 @@ if __name__ == '__main__':
                 img=img,
                 pt1=(round(x1), round(y1)),
                 pt2=(round(x2), round(y2)),
+                color=(0, 0, 255),
+                thickness=2)
+            img = cv2.putText(
+                img=img,
+                text="License plate",
+                org=(round(x1), round(y1) - 5),
+                fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                fontScale=.5,
                 color=(0, 0, 255),
                 thickness=2)
         cv2.imshow("test", img)

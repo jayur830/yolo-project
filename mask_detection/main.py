@@ -31,7 +31,7 @@ if __name__ == '__main__':
             output = model.predict(x)
             vectors = high_confidence_vector(output[0])
             for vector in vectors:
-                x1, y1, x2, y2 = convert_yolo_to_abs(target_width, target_height, grid_width_ratio, grid_height_ratio, vector)
+                x1, y1, x2, y2 = convert_yolo_to_abs(target_width, target_height, grid_width_ratio, grid_height_ratio, vector[:-1])
                 img = cv2.rectangle(
                     img=img,
                     pt1=(int(x1), int(y1)),

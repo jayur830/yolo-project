@@ -66,5 +66,8 @@ def high_confidence_vector(yolo_tensor, threshold: float = .5):
     for h in range(yolo_tensor.shape[0]):
         for w in range(yolo_tensor.shape[1]):
             if yolo_tensor[h, w, 4] >= threshold:
-                vectors.append([w, h] + yolo_tensor[h, w, :4].tolist())
+                vector = [w, h] + yolo_tensor[h, w, :4].tolist()
+                if yolo_tensor.shape[-1] > 5:
+                    vector += [yolo_tensor[h, w, 5:].argmax()]
+                vectors.append(vector)
     return vectors
