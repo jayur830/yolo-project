@@ -9,7 +9,7 @@ def yolo_model(kernel_initializer: str = "he_normal"):
 
     # (368, 640, 3) -> (368, 640, 8)
     model = tf.keras.layers.Conv2D(
-        filters=8,
+        filters=16,
         kernel_size=3,
         padding="same",
         kernel_initializer=kernel_initializer,
@@ -27,7 +27,7 @@ def yolo_model(kernel_initializer: str = "he_normal"):
     model = tf.keras.layers.MaxPool2D()(model)
     # (184, 320, 8) -> (184, 320, 16)
     model = tf.keras.layers.Conv2D(
-        filters=16,
+        filters=32,
         kernel_size=3,
         padding="same",
         kernel_initializer=kernel_initializer,
@@ -45,7 +45,7 @@ def yolo_model(kernel_initializer: str = "he_normal"):
     model = tf.keras.layers.MaxPool2D()(model)
     # (92, 160, 16) -> (92, 160, 32)
     model = tf.keras.layers.Conv2D(
-        filters=32,
+        filters=64,
         kernel_size=3,
         padding="same",
         kernel_initializer=kernel_initializer,
@@ -63,7 +63,7 @@ def yolo_model(kernel_initializer: str = "he_normal"):
     model = tf.keras.layers.MaxPool2D()(model)
     # (46, 80, 32) -> (46, 80, 64)
     model = tf.keras.layers.Conv2D(
-        filters=64,
+        filters=128,
         kernel_size=3,
         padding="same",
         kernel_initializer=kernel_initializer,
@@ -93,6 +93,5 @@ def yolo_model(kernel_initializer: str = "he_normal"):
         loss=yolo_loss)
         # loss=YoloLoss())
         # loss=jotganzi_loss)
-
 
     return model

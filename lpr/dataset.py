@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 def load_data():
     x_data, y_data = [], []
 
-    categories = ["lane_day_ag_5", "lane_day_etc_1", "crime_day_etc_1"]
+    categories = ["crime_day_etc_1"]
     thread_pool_executor = ThreadPoolExecutor(16)
 
     def load(filename):

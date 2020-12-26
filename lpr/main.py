@@ -58,6 +58,9 @@ if __name__ == '__main__':
         validation_split=.2,
         callbacks=[tf.keras.callbacks.LambdaCallback(on_batch_end=imshow)])
 
+    model.save(filepath="model.h5")
+    model = tf.keras.models.load_model(filepath="model.h5", compile=False)
+
     for i in range(x_test.shape[0]):
         img = x_test[i].copy()
         output = model.predict(x_test[i].reshape((1,) + x_test[i].shape))
