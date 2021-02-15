@@ -3,7 +3,6 @@ import numpy as np
 import cv2
 import random
 import math
-import os
 
 from glob import glob
 from copy import copy
