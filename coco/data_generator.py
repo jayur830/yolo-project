@@ -73,7 +73,7 @@ class YOLODataGenerator(tf.keras.utils.Sequence):
         img = cv2.resize(
             src=img,
             dsize=(self.__target_width, self.__target_height),
-            interpolation=cv2.INTER_AREA)
+            interpolation=cv2.INTER_AREA) / 255.
         batch_x.append(img)
 
         # Create bounding box labels for YOLO
@@ -112,6 +112,5 @@ if __name__ == '__main__':
         grid_ratio=(52, 52),
         batch_size=256)
 
-    for a, b in yolo_data_generator:
-        print(a.shape, b.shape)
-        input("a")
+    x, y = yolo_data_generator[0]
+    print(x.shape, y.shape)

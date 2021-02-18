@@ -6,11 +6,10 @@ def sum_squared_error(y_true, y_pred, axis=None):
 
 
 def yolo_loss(y_true, y_pred):
-    def yolo_loc_loss(x):
-        return 4. * (x - .5) ** 3. + .5
-
     lambda_coord, lambda_noobj = 5., .5
     p_channel = y_true[:, :, :, 4]
+
+    print(y_true.shape, y_pred.shape)
 
     xy_loss = lambda_coord * tf.reduce_sum(sum_squared_error(y_true[:, :, :, :2], y_pred[:, :, :, :2], axis=-1) * p_channel)
     wh_loss = lambda_coord * tf.reduce_sum(sum_squared_error(y_true[:, :, :, 2:4] ** .5, y_pred[:, :, :, 2:4] ** .5, axis=-1) * p_channel)
@@ -19,7 +18,6 @@ def yolo_loss(y_true, y_pred):
             tf.cast(p_channel, dtype=tf.bool),
             tf.ones(shape=p_channel.shape[1:]),
             tf.ones(shape=p_channel.shape[1:]) * lambda_noobj))
-    # conf_loss = tf.reduce_sum(tf.square(y_true[0, :, :, 4] - y_pred[0, :, :, 4]) * p_channel)
     class_loss = 0.
     if y_true.shape[-1] > 5:
         class_loss = tf.reduce_sum(sum_squared_error(y_true[:, :, :, 5:], y_pred[:, :, :, 5:], axis=-1) * p_channel)

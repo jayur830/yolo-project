@@ -1,21 +1,73 @@
 import tensorflow as tf
 
-class YOLO(tf.keras.models.Model):
-    def __init__(self, kernel_initializer="he_normal", input_shape=None):
-        super(YOLO, self).__init__()
-        self.__kernel_initializer = kernel_initializer
-
-        model = tf.keras.layers.Input(shape=input_shape)
+from coco.layer_wrapper import LayerWrapper
+from losses import yolo_loss
 
 
-    def call(self, inputs, training=None, mask=None):
+def yolo_model(
+        num_classes,
+        kernel_initializer="he_normal",
+        learning_rate=1e-3):
 
-    def __bn_relu(self, inputs, bn_momentum=.9):
-        x = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(inputs)
-        x = tf.keras.layers.ReLU()(x)
-        return x
+    # (416, 416, 3)
+    input_layer = tf.keras.layers.Input(shape=(416, 416, 3))
+    # (416, 416, 3) -> (208, 208, 8)
+    model = tf.keras.layers.SeparableConv2D(
+        filters=8,
+        kernel_size=3,
+        padding="same",
+        strides=2,
+        kernel_initializer=kernel_initializer,
+        use_bias=False)(input_layer)
+    model = LayerWrapper.bn_lrelu(model)
+    # (208, 208, 8) -> (104, 104, 16)
+    model = tf.keras.layers.SeparableConv2D(
+        filters=16,
+        kernel_size=3,
+        padding="same",
+        strides=2,
+        kernel_initializer=kernel_initializer,
+        use_bias=False)(model)
+    model = LayerWrapper.bn_lrelu(model)
+    # (104, 104, 16) -> (52, 52, 32)
+    model = tf.keras.layers.SeparableConv2D(
+        filters=32,
+        kernel_size=3,
+        padding="same",
+        strides=2,
+        kernel_initializer=kernel_initializer,
+        use_bias=False)(model)
+    model = LayerWrapper.bn_lrelu(model)
+    # (52, 52, 32) -> (26, 26, 64)
+    model = tf.keras.layers.SeparableConv2D(
+        filters=64,
+        kernel_size=3,
+        padding="same",
+        strides=2,
+        kernel_initializer=kernel_initializer,
+        use_bias=False)(model)
+    model = LayerWrapper.bn_lrelu(model)
+    # (26, 26, 64) -> (13, 13, 128)
+    model = tf.keras.layers.SeparableConv2D(
+        filters=128,
+        kernel_size=3,
+        padding="same",
+        strides=2,
+        kernel_initializer=kernel_initializer,
+        use_bias=False)(model)
+    model = LayerWrapper.bn_lrelu(model)
+    # (13, 13, 128) -> (13, 13, 5 + num_classes)
+    model = tf.keras.layers.SeparableConv2D(
+        filters=5 + num_classes,
+        kernel_size=1,
+        kernel_initializer=kernel_initializer)(model)
+    model = tf.keras.layers.Activation(tf.keras.activations.sigmoid)(model)
 
-    def __bn_leaky_relu(self, inputs, bn_momentum=.9, lrelu_alpha=.1):
-        x = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(inputs)
-        x = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(x)
-        return x
+    model = tf.keras.models.Model(input_layer, model)
+    model.compile(
+        optimizer=tf.optimizers.Adam(learning_rate=learning_rate),
+        loss=yolo_loss,
+        metrics=[tf.metrics.Recall()])
+    model.summary()
+
+    return model
