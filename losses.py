@@ -6,23 +6,29 @@ def sum_squared_error(y_true, y_pred, axis=None):
 
 
 def yolo_loss(y_true, y_pred):
+    from tensorflow.python.framework.ops import convert_to_tensor_v2
+    y_pred = convert_to_tensor_v2(y_pred)
+    y_true = tf.cast(y_true, y_pred.dtype)
+
     lambda_coord, lambda_noobj = 5., .5
     p_channel = y_true[:, :, :, 4]
 
-    print(y_true.shape, y_pred.shape)
-
+    # print(y_true.shape, y_pred.shape)
     xy_loss = lambda_coord * tf.reduce_sum(sum_squared_error(y_true[:, :, :, :2], y_pred[:, :, :, :2], axis=-1) * p_channel)
     wh_loss = lambda_coord * tf.reduce_sum(sum_squared_error(y_true[:, :, :, 2:4] ** .5, y_pred[:, :, :, 2:4] ** .5, axis=-1) * p_channel)
     conf_loss = tf.reduce_sum(
         tf.square(y_true[:, :, :, 4] - y_pred[:, :, :, 4]) * tf.where(
             tf.cast(p_channel, dtype=tf.bool),
-            tf.ones(shape=p_channel.shape[1:]),
-            tf.ones(shape=p_channel.shape[1:]) * lambda_noobj))
-    class_loss = 0.
-    if y_true.shape[-1] > 5:
-        class_loss = tf.reduce_sum(sum_squared_error(y_true[:, :, :, 5:], y_pred[:, :, :, 5:], axis=-1) * p_channel)
+            tf.ones(shape=tf.shape(input=p_channel)[1:]),
+            tf.ones(shape=tf.shape(input=p_channel)[1:]) * lambda_noobj))
+
+    # conf_loss = tf.reduce_sum(y_true[:, :, :, 4] - y_pred[:, :, :, 4] * y_true[:, :, :, 4]) * lambda_coord
+    # class_loss = 0.
+    # if y_true.shape[-1] > tf.constant(5):
+    class_loss = tf.reduce_sum(sum_squared_error(y_true[:, :, :, 5:], y_pred[:, :, :, 5:], axis=-1) * p_channel)
 
     return xy_loss + wh_loss + conf_loss + class_loss
+    # return xy_loss + wh_loss
 
 
 class YoloLoss(tf.keras.losses.Loss):

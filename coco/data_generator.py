@@ -51,7 +51,7 @@ class YOLODataGenerator(tf.keras.utils.Sequence):
         futures = []
         for x_path in self.__x_path_list[index * self.__batch_size:(index + 1) * self.__batch_size]:
             futures.append(executor.submit(self.__load, x_path, batch_x, batch_y))
-        for future in tqdm(futures):
+        for future in futures:
             future.result()
 
         return np.asarray(batch_x), np.asarray(batch_y)

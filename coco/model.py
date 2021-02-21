@@ -3,12 +3,15 @@ import tensorflow as tf
 from coco.layer_wrapper import LayerWrapper
 from losses import yolo_loss
 
+import os
+
+os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
+
 
 def yolo_model(
         num_classes,
         kernel_initializer="he_normal",
         learning_rate=1e-3):
-
     # (416, 416, 3)
     input_layer = tf.keras.layers.Input(shape=(416, 416, 3))
     # (416, 416, 3) -> (208, 208, 8)
