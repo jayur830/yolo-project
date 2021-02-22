@@ -52,7 +52,7 @@ def load_data():
     futures = []
     for filename in tqdm(img_list):
         futures.append(executor.submit(load, filename, x_data, y_data))
-    for future in futures:
+    for future in tqdm(futures):
         future.result()
 
     x_data, y_data = np.asarray(x_data), np.asarray(y_data)
