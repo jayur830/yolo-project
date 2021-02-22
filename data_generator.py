@@ -6,7 +6,6 @@ import math
 
 from glob import glob
 from copy import copy
-from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 
 from utils import convert_abs_to_yolo
@@ -35,7 +34,7 @@ class YOLODataGenerator(tf.keras.utils.Sequence):
         self.__x_paths, self.__y_paths = None, None
         self.__num_classes = num_classes
         self.__target_width, self.__target_height = target_size
-        self.__grid_width_ratio, self.__grid_height_ratio = grid_ratio
+        self.__grid_ratio = np.asarray(grid_ratio)
         self.__batch_size = batch_size
         self.__shuffle = shuffle
         self.__color = color
@@ -80,7 +79,7 @@ class YOLODataGenerator(tf.keras.utils.Sequence):
         path = x_path[:x_path.index(self.__x_path_ext) - 1]
         with open(path + "." + self.__y_path_ext, "r") as label_reader:
             bboxes = [label_filename[:-1].split(" ") for label_filename in label_reader.readlines()]
-            label_tensor = np.zeros(shape=(self.__grid_height_ratio, self.__grid_width_ratio, 5 + self.__num_classes))
+            label_tensor = np.zeros(shape=(self.__grid_ratio[1], self.__grid_ratio[0], 5 + self.__num_classes))
 
             for bbox in bboxes:
                 class_num, x, y, w, h = bbox
@@ -88,8 +87,8 @@ class YOLODataGenerator(tf.keras.utils.Sequence):
                 grid_x, grid_y, x, y, w, h = convert_abs_to_yolo(
                     self.__target_width,
                     self.__target_height,
-                    self.__grid_width_ratio,
-                    self.__grid_height_ratio,
+                    self.__grid_ratio[0],
+                    self.__grid_ratio[1],
                     [x - w / 2, y - h / 2, x + w / 2, y + h / 2])
                 label_tensor[grid_y, grid_x, 0] = x
                 label_tensor[grid_y, grid_x, 1] = y

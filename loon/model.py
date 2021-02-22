@@ -1,7 +1,7 @@
 import tensorflow as tf
 
-from losses import yolo_loss, yolo_mean_squared_log_error, YoloLoss, jotganzi_loss
-from loon.vars import target_width, target_height
+from losses import yolo_loss, yolo_mean_squared_log_error, YoloLoss
+from loon.common import target_width, target_height
 
 
 def yolo_model(kernel_initializer: str = "he_normal"):

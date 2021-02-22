@@ -4,24 +4,28 @@ import os
 
 from xml.etree.ElementTree import parse
 from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor
+
 from utils import convert_abs_to_yolo
-from mask_detection.vars import target_width, target_height, grid_width_ratio, grid_height_ratio, category
+from mask_detection.common import target_width, target_height, grid_width_ratio, grid_height_ratio, category
 
 
 def load_data():
     x_data, y_data = [], []
 
-    filenames = os.listdir("./images")
+    filenames = os.listdir("./data/images")
     filenames = [filename[:filename.find(".png")] for filename in filenames]
 
-    for filename in tqdm(filenames):
-        tree = parse(f"./annotations/{filename}.xml")
-        root = tree.getroot()
+    executor = ThreadPoolExecutor(16)
 
-        x_data.append(cv2.resize(
-            src=cv2.imread(f"./images/{filename}.png"),
+    def load(filename, _x_data, _y_data):
+        _x_data.append(cv2.resize(
+            src=cv2.imread(f"./data/images/{filename}.png"),
             dsize=(target_width, target_height),
             interpolation=cv2.INTER_AREA))
+
+        tree = parse(f"./data/annotations/{filename}.xml")
+        root = tree.getroot()
 
         size = root.find("size")
         height, width = int(size.find("height").text), int(size.find("width").text)
@@ -43,7 +47,12 @@ def load_data():
             y1 *= target_height / height
             y2 *= target_height / height
 
-            grid_x, grid_y, x, y, w, h = convert_abs_to_yolo(target_width, target_height, grid_width_ratio, grid_height_ratio, [(x1 + x2) / 2, (y1 + y2) / 2, x2 - x1, y2 - y1])
+            grid_x, grid_y, x, y, w, h = convert_abs_to_yolo(
+                target_width,
+                target_height,
+                grid_width_ratio,
+                grid_height_ratio,
+                [(x1 + x2) / 2, (y1 + y2) / 2, x2 - x1, y2 - y1])
             label_tensor[grid_y, grid_x, 0] = x
             label_tensor[grid_y, grid_x, 1] = y
             label_tensor[grid_y, grid_x, 2] = w
@@ -51,6 +60,12 @@ def load_data():
             label_tensor[grid_y, grid_x, 4] = 1.
             label_tensor[grid_y, grid_x, 5 + c] = 1.
 
-        y_data.append(label_tensor)
+        _y_data.append(label_tensor)
+
+    futures = []
+    for filename in tqdm(filenames):
+        futures.append(executor.submit(load, filename, x_data, y_data))
+    for future in futures:
+        future.result()
 
     return np.asarray(x_data), np.asarray(y_data)

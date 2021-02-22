@@ -4,7 +4,7 @@ import numpy as np
 from glob import glob
 from tqdm import tqdm
 from utils import convert_abs_to_yolo
-from lpr.vars import target_width, target_height, grid_width_ratio, grid_height_ratio
+from lpr.common import target_width, target_height, grid_width_ratio, grid_height_ratio
 from concurrent.futures import ThreadPoolExecutor
 
 

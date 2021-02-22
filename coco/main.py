@@ -2,12 +2,11 @@ import tensorflow as tf
 import numpy as np
 import cv2
 
-from coco.data_generator import YOLODataGenerator
+from data_generator import YOLODataGenerator
 from coco.model import yolo_model
 from utils import high_confidence_vector, convert_yolo_to_abs
+from coco.common import target_width, target_height, grid_width_ratio, grid_height_ratio
 
-target_width, target_height = 416, 416
-grid_width_ratio, grid_height_ratio = 13, 13
 batch_size = 2
 epochs = 100
 step = 0
@@ -25,14 +24,16 @@ if __name__ == '__main__':
 
     yolo = yolo_model(num_classes=len(classes))
 
-    @tf.function
-    def predict(x):
-        return yolo(x)
+    def predict(model, x):
+        @tf.function
+        def _predict(_model, _x):
+            return _model(_x)
+        return np.asarray(_predict(model, x))
 
     def on_batch_end(_, logs):
         global batch_size, step
         img = data_gen[step][0][0].reshape((1,) + data_gen[step][0][0].shape)
-        output = np.asarray(predict(img))
+        output = predict(yolo, img)
         vectors = high_confidence_vector(output[0])
         for vector in vectors:
             grid_x, grid_y, x, y, w, h, c = vector

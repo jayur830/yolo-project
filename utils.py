@@ -1,4 +1,6 @@
 import tensorflow as tf
+import numpy as np
+import cv2
 
 
 def gpu_init():
@@ -71,3 +73,30 @@ def high_confidence_vector(yolo_tensor, threshold: float = .5):
                     vector += [yolo_tensor[h, w, 5:].argmax()]
                 vectors.append(vector)
     return vectors
+
+
+@tf.function
+def predict(model, x):
+    return model(x)
+
+
+def on_batch_end_callback(model, x, target_width, target_height, grid_width_ratio, grid_height_ratio, step):
+    img = x[step].copy()
+    x = cv2.resize(
+        src=img,
+        dsize=(target_width, target_height),
+        interpolation=cv2.INTER_AREA)
+    x = x.reshape((1,) + x.shape)
+    output = np.asarray(predict(model, x))
+    vectors = high_confidence_vector(output[0])
+    for vector in vectors:
+        x1, y1, x2, y2 = convert_yolo_to_abs(target_width, target_height, grid_width_ratio, grid_height_ratio,
+                                             vector[:-1])
+        img = cv2.rectangle(
+            img=img,
+            pt1=(int(x1), int(y1)),
+            pt2=(int(x2), int(y2)),
+            color=(0, 0, 255),
+            thickness=2)
+    cv2.imshow("test", img)
+    cv2.waitKey(1)

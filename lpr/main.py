@@ -4,7 +4,7 @@ import cv2
 from lpr.dataset import load_data
 from lpr.model import yolo_model
 from utils import gpu_init, high_confidence_vector, convert_yolo_to_abs
-from lpr.vars import target_width, target_height, grid_width_ratio, grid_height_ratio
+from lpr.common import target_width, target_height, grid_width_ratio, grid_height_ratio
 
 step = 0
 step_interval = 10
@@ -12,8 +12,6 @@ batch_size = 2
 
 
 if __name__ == '__main__':
-    # gpu_init()
-
     (x_train, y_train), (x_test, y_test) = load_data()
     model = yolo_model()
 

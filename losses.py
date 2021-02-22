@@ -13,7 +13,6 @@ def yolo_loss(y_true, y_pred):
     lambda_coord, lambda_noobj = 5., .5
     p_channel = y_true[:, :, :, 4]
 
-    # print(y_true.shape, y_pred.shape)
     xy_loss = lambda_coord * tf.reduce_sum(sum_squared_error(y_true[:, :, :, :2], y_pred[:, :, :, :2], axis=-1) * p_channel)
     wh_loss = lambda_coord * tf.reduce_sum(sum_squared_error(y_true[:, :, :, 2:4] ** .5, y_pred[:, :, :, 2:4] ** .5, axis=-1) * p_channel)
     conf_loss = tf.reduce_sum(
@@ -21,14 +20,9 @@ def yolo_loss(y_true, y_pred):
             tf.cast(p_channel, dtype=tf.bool),
             tf.ones(shape=tf.shape(input=p_channel)[1:]),
             tf.ones(shape=tf.shape(input=p_channel)[1:]) * lambda_noobj))
-
-    # conf_loss = tf.reduce_sum(y_true[:, :, :, 4] - y_pred[:, :, :, 4] * y_true[:, :, :, 4]) * lambda_coord
-    # class_loss = 0.
-    # if y_true.shape[-1] > tf.constant(5):
     class_loss = tf.reduce_sum(sum_squared_error(y_true[:, :, :, 5:], y_pred[:, :, :, 5:], axis=-1) * p_channel)
 
     return xy_loss + wh_loss + conf_loss + class_loss
-    # return xy_loss + wh_loss
 
 
 class YoloLoss(tf.keras.losses.Loss):
@@ -55,7 +49,8 @@ class YoloLoss(tf.keras.losses.Loss):
 
 
 def mean_absolute_log_error(y_true, y_pred, axis=None):
-    return tf.reduce_mean(-tf.math.log(1 + 1e-7 - tf.abs(y_true - y_pred)), axis=axis)
+    epsilon = 1e-7
+    return tf.reduce_mean(-tf.math.log(1 + epsilon - tf.abs(y_true - y_pred)), axis=axis)
 
 
 class MeanAbsoluteLogError(tf.keras.losses.Loss):

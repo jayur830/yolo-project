@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from losses import yolo_loss
-from mask_detection.vars import target_width, target_height
+from mask_detection.common import target_width, target_height
 
 
 def yolo_model(kernel_initializer: str = "he_normal"):
@@ -90,6 +90,7 @@ def yolo_model(kernel_initializer: str = "he_normal"):
     model.summary()
     model.compile(
         optimizer=tf.optimizers.Adam(learning_rate=1e-2),
-        loss=yolo_loss)
+        loss=yolo_loss,
+        metrics=[tf.metrics.Recall()])
 
     return model

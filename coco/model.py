@@ -1,7 +1,8 @@
 import tensorflow as tf
 
-from coco.layer_wrapper import LayerWrapper
 from losses import yolo_loss
+from coco.layer_wrapper import LayerWrapper
+from coco.common import target_width, target_height
 
 import os
 
@@ -13,7 +14,7 @@ def yolo_model(
         kernel_initializer="he_normal",
         learning_rate=1e-3):
     # (416, 416, 3)
-    input_layer = tf.keras.layers.Input(shape=(416, 416, 3))
+    input_layer = tf.keras.layers.Input(shape=(target_height, target_width, 3))
     # (416, 416, 3) -> (208, 208, 8)
     model = tf.keras.layers.SeparableConv2D(
         filters=8,
