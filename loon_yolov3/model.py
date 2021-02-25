@@ -1,7 +1,7 @@
 import tensorflow as tf
 
-from losses import yolo_loss, yolo_mean_squared_log_error, YoloLoss
-from loon.common import target_width, target_height
+from loon_yolov3.common import target_width, target_height
+from loon_yolov3.v3_loss import yolov3_loss
 
 
 def yolo_model(kernel_initializer: str = "he_normal"):
@@ -62,24 +62,24 @@ def yolo_model(kernel_initializer: str = "he_normal"):
     # (32, 128, 32) -> (16, 64, 32)
     model = tf.keras.layers.MaxPool2D()(model)
 
-    # (32, 128, 16) -> (32, 128, 32)
-    model = tf.keras.layers.Conv2D(
-        filters=64,
-        kernel_size=3,
-        padding="same",
-        kernel_initializer=kernel_initializer,
-        use_bias=False)(model)
-    model = tf.keras.layers.BatchNormalization()(model)
-    model = tf.keras.layers.LeakyReLU(alpha=1e-2)(model)
-    model = tf.keras.layers.DepthwiseConv2D(
-        kernel_size=3,
-        padding="same",
-        kernel_initializer=kernel_initializer,
-        use_bias=False)(model)
-    model = tf.keras.layers.BatchNormalization()(model)
-    model = tf.keras.layers.LeakyReLU(alpha=1e-2)(model)
-    # (32, 128, 32) -> (16, 64, 32)
-    model = tf.keras.layers.MaxPool2D()(model)
+    # # (32, 128, 16) -> (32, 128, 32)
+    # model = tf.keras.layers.Conv2D(
+    #     filters=64,
+    #     kernel_size=3,
+    #     padding="same",
+    #     kernel_initializer=kernel_initializer,
+    #     use_bias=False)(model)
+    # model = tf.keras.layers.BatchNormalization()(model)
+    # model = tf.keras.layers.LeakyReLU(alpha=1e-2)(model)
+    # model = tf.keras.layers.DepthwiseConv2D(
+    #     kernel_size=3,
+    #     padding="same",
+    #     kernel_initializer=kernel_initializer,
+    #     use_bias=False)(model)
+    # model = tf.keras.layers.BatchNormalization()(model)
+    # model = tf.keras.layers.LeakyReLU(alpha=1e-2)(model)
+    # # (32, 128, 32) -> (16, 64, 32)
+    # model = tf.keras.layers.MaxPool2D()(model)
 
 
     # (16, 64, 32) -> (16, 64, 9)
@@ -87,7 +87,7 @@ def yolo_model(kernel_initializer: str = "he_normal"):
         filters=9,
         kernel_size=1,
         kernel_initializer=kernel_initializer)(model)
-    model = tf.keras.layers.Activation(tf.keras.activations.sigmoid)(model)
+    model = tf.keras.layers.Activation(tf.keras.activations.linear)(model)
 
     model = tf.keras.models.Model(input_layer, model)
 
@@ -142,7 +142,7 @@ def yolo_model(kernel_initializer: str = "he_normal"):
     model.summary()
     model.compile(
         optimizer=tf.optimizers.Adam(learning_rate=1e-2),
-        loss=yolo_loss)
+        loss=yolov3_loss)
 
     return model
 

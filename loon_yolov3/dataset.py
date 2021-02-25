@@ -6,7 +6,7 @@ from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 
 from utils import convert_abs_to_yolo
-from loon.common import target_width, target_height, grid_width_ratio, grid_height_ratio, category
+from loon_yolov3.common import target_width, target_height, grid_width_ratio, grid_height_ratio, category
 
 
 def load_data():
@@ -20,7 +20,7 @@ def load_data():
         img = cv2.resize(
             src=cv2.imread(f"D:/Dataset/loon_rpn_split/{filename}.jpg"),
             dsize=(target_width, target_height),
-            interpolation=cv2.INTER_AREA)
+            interpolation=cv2.INTER_AREA) / 255.
         _x_data.append(img)
 
         label_tensor = np.zeros(shape=(grid_height_ratio, grid_width_ratio, 5 + len(category)))

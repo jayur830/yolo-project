@@ -1,11 +1,19 @@
 import tensorflow as tf
 import cv2
 import os
+import math
 
-from loon.dataset import load_data
-from loon.model import yolo_model
+from loon_yolov3.dataset import load_data
+from loon_yolov3.model import yolo_model
 from utils import high_confidence_vector, convert_yolo_to_abs
-from loon.common import target_width, target_height, grid_width_ratio, grid_height_ratio, category_index
+from loon_yolov3.common import \
+    target_width, \
+    target_height, \
+    grid_width_ratio, \
+    grid_height_ratio, \
+    anchor_width, \
+    anchor_height, \
+    category_index
 
 step = 0
 step_interval = 20
@@ -15,7 +23,10 @@ os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
 
 if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = load_data()
+
     model = yolo_model()
+
+    sigmoid = lambda x: 1 / (1 + math.exp(-x))
 
     def on_batch_end(_1, logs):
         global step, step_interval
@@ -31,7 +42,19 @@ if __name__ == '__main__':
             output = model.predict(x)
             vectors = high_confidence_vector(output[0])
             for vector in vectors:
-                x1, y1, x2, y2 = convert_yolo_to_abs(target_width, target_height, grid_width_ratio, grid_height_ratio, vector[:-1])
+                x1, y1, x2, y2 = convert_yolo_to_abs(
+                    target_width,
+                    target_height,
+                    grid_width_ratio,
+                    grid_height_ratio,
+                    [
+                        vector[0],
+                        vector[1],
+                        sigmoid(vector[2]),
+                        sigmoid(vector[3]),
+                        anchor_width * math.exp(vector[4]),
+                        anchor_height * math.exp(vector[5])
+                    ])
                 img = cv2.rectangle(
                     img=img,
                     pt1=(round(x1), round(y1)),
@@ -69,7 +92,19 @@ if __name__ == '__main__':
         vectors = high_confidence_vector(output[0])
         for vector in vectors:
             print(vector)
-            x1, y1, x2, y2 = convert_yolo_to_abs(target_width, target_height, grid_width_ratio, grid_height_ratio, vector[:-1])
+            x1, y1, x2, y2 = convert_yolo_to_abs(
+                target_width,
+                target_height,
+                grid_width_ratio,
+                grid_height_ratio,
+                [
+                    vector[0],
+                    vector[1],
+                    sigmoid(vector[2]),
+                    sigmoid(vector[3]),
+                    anchor_width * math.exp(vector[4]),
+                    anchor_height * math.exp(vector[5])
+                ])
             img = cv2.rectangle(
                 img=img,
                 pt1=(round(x1), round(y1)),
