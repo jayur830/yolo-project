@@ -13,7 +13,7 @@ def yolov3_loss(y_true, y_pred):
     w_loss = lambda_coord * tf.reduce_sum(sum_squared_error(tf.expand_dims(y_true[:, :, :, 2] ** .5, axis=-1), tf.expand_dims(anchor_width * tf.exp(y_pred[:, :, :, 2]) ** .5, axis=-1), axis=-1) * confidence_channel)
     h_loss = lambda_coord * tf.reduce_sum(sum_squared_error(tf.expand_dims(y_true[:, :, :, 3] ** .5, axis=-1), tf.expand_dims(anchor_height * tf.exp(y_pred[:, :, :, 3]) ** .5, axis=-1), axis=-1) * confidence_channel)
     # iou = iou(y_true, y_pred)
-    iou = 0.3
+    iou = 1.
     confidence_loss = tf.reduce_sum(
         tf.square(y_true[:, :, :, 4] - iou * y_pred[:, :, :, 4]) * tf.where(
             tf.cast(confidence_channel, dtype=tf.bool),
