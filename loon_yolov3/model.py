@@ -61,7 +61,8 @@ def yolo_model(kernel_initializer: str = "he_normal"):
     model = tf.keras.layers.LeakyReLU(alpha=1e-2)(model)
     # (32, 128, 32) -> (16, 64, 32)
     model = tf.keras.layers.MaxPool2D()(model)
-    # (16, 64, 32) -> (16, 64, 64)
+
+    # (32, 128, 16) -> (32, 128, 32)
     model = tf.keras.layers.Conv2D(
         filters=64,
         kernel_size=3,
@@ -78,10 +79,10 @@ def yolo_model(kernel_initializer: str = "he_normal"):
     model = tf.keras.layers.BatchNormalization()(model)
     model = tf.keras.layers.LeakyReLU(alpha=1e-2)(model)
     # (32, 128, 32) -> (16, 64, 32)
-    # model = tf.keras.layers.MaxPool2D()(model)
+    model = tf.keras.layers.MaxPool2D()(model)
 
 
-    # (16, 64, 64) -> (16, 64, 9)
+    # (16, 64, 32) -> (16, 64, 9)
     model = tf.keras.layers.Conv2D(
         filters=9,
         kernel_size=1,

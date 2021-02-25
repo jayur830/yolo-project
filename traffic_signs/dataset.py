@@ -5,8 +5,7 @@ from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 
 from utils import convert_abs_to_yolo
-from traffic_signs.common import path
-from traffic_signs.vars import target_width, target_height, grid_width_ratio, grid_height_ratio
+from traffic_signs.common import path, target_width, target_height, grid_width_ratio, grid_height_ratio
 
 
 def load_data():

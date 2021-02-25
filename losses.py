@@ -18,8 +18,8 @@ def yolo_loss(y_true, y_pred):
     conf_loss = tf.reduce_sum(
         tf.square(y_true[:, :, :, 4] - y_pred[:, :, :, 4]) * tf.where(
             tf.cast(p_channel, dtype=tf.bool),
-            tf.ones(shape=tf.shape(input=p_channel)[1:]),
-            tf.ones(shape=tf.shape(input=p_channel)[1:]) * lambda_noobj))
+            tf.ones(shape=tf.shape(input=p_channel)),
+            tf.ones(shape=tf.shape(input=p_channel)) * lambda_noobj))
     class_loss = tf.reduce_sum(sum_squared_error(y_true[:, :, :, 5:], y_pred[:, :, :, 5:], axis=-1) * p_channel)
 
     return xy_loss + wh_loss + conf_loss + class_loss
@@ -114,16 +114,3 @@ def yolo_mean_squared_log_error(y_true, y_pred):
 def grid_mean_squared_error(y_true, y_pred):
     p_channel = tf.expand_dims(y_true[0, :, :, 4], axis=-1)
     return tf.reduce_mean(tf.square(y_true - y_pred) * tf.repeat(input=p_channel, repeats=y_true.shape[-1], axis=-1))
-
-
-def tmp_loss(y_true, y_pred):
-    alpha = .5
-
-    p_loss = tf.reduce_sum(tf.square(y_true[:, :, :, 4] - y_pred[:, :, :, 4]))
-    max_p_loss = y_true.shape[1] * y_true.shape[2]
-    obj_loss = tf.reduce_sum(tf.square(y_true - y_pred), axis=-1) * y_true[:, :, :, 4]
-    obj_loss = tf.reduce_sum(obj_loss)
-    max_obj_loss = tf.reduce_sum(y_true[:, :, :, 4]) * y_true.shape[-1] + 1e-7
-    loss = (p_loss / max_p_loss) * alpha + (obj_loss / max_obj_loss) * (1. - alpha)
-    # return -tf.math.log(1.0 + 1e-7 - loss)
-    return p_loss + obj_loss

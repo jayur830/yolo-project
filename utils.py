@@ -80,6 +80,12 @@ def predict(model, x):
     return model(x)
 
 
+def iou_tensor(a, b):
+    intersection = tf.maximum(tf.minimum(a[:, :, :, 2], b[:, :, :, 2]) - tf.maximum(a[:, :, :, 0], b[:, :, :, 0]), 0) * tf.maximum(tf.minimum(a[:, :, :, 3], b[:, :, :, 3]) - tf.maximum(a[:, :, :, 1], b[:, :, :, 1]), 0)
+    union = a[:, :, :, 2] * a[:, :, :, 3] + b[:, :, :, 2] * b[:, :, :, 3] - intersection
+    return intersection / union
+
+
 def on_batch_end_callback(model, x, target_width, target_height, grid_width_ratio, grid_height_ratio, step):
     img = x[step].copy()
     x = cv2.resize(
@@ -100,3 +106,11 @@ def on_batch_end_callback(model, x, target_width, target_height, grid_width_rati
             thickness=2)
     cv2.imshow("test", img)
     cv2.waitKey(1)
+
+
+if __name__ == '__main__':
+    # [x1, y1, x2, y2]
+    a = [1, 1, 2, 2]
+    b = [5, 3, 6, 4]
+
+    print(iou(a, b))

@@ -74,5 +74,6 @@ def model(
         optimizer=tf.optimizers.Adam(learning_rate=learning_rate),
         loss=yolo_loss,
         metrics=[tf.metrics.Recall()])
+    model.summary()
 
     return model

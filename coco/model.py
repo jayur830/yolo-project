@@ -1,7 +1,6 @@
 import tensorflow as tf
 
 from losses import yolo_loss
-from coco.layer_wrapper import LayerWrapper
 from coco.common import target_width, target_height
 
 import os
@@ -23,7 +22,8 @@ def yolo_model(
         strides=2,
         kernel_initializer=kernel_initializer,
         use_bias=False)(input_layer)
-    model = LayerWrapper.bn_lrelu(model)
+    model = tf.keras.layers.BatchNormalization()(model)
+    model = tf.keras.layers.LeakyReLU(alpha=.1)(model)
     # (208, 208, 8) -> (104, 104, 16)
     model = tf.keras.layers.SeparableConv2D(
         filters=16,
@@ -32,7 +32,8 @@ def yolo_model(
         strides=2,
         kernel_initializer=kernel_initializer,
         use_bias=False)(model)
-    model = LayerWrapper.bn_lrelu(model)
+    model = tf.keras.layers.BatchNormalization()(model)
+    model = tf.keras.layers.LeakyReLU(alpha=.1)(model)
     # (104, 104, 16) -> (52, 52, 32)
     model = tf.keras.layers.SeparableConv2D(
         filters=32,
@@ -41,7 +42,8 @@ def yolo_model(
         strides=2,
         kernel_initializer=kernel_initializer,
         use_bias=False)(model)
-    model = LayerWrapper.bn_lrelu(model)
+    model = tf.keras.layers.BatchNormalization()(model)
+    model = tf.keras.layers.LeakyReLU(alpha=.1)(model)
     # (52, 52, 32) -> (26, 26, 64)
     model = tf.keras.layers.SeparableConv2D(
         filters=64,
@@ -50,7 +52,8 @@ def yolo_model(
         strides=2,
         kernel_initializer=kernel_initializer,
         use_bias=False)(model)
-    model = LayerWrapper.bn_lrelu(model)
+    model = tf.keras.layers.BatchNormalization()(model)
+    model = tf.keras.layers.LeakyReLU(alpha=.1)(model)
     # (26, 26, 64) -> (13, 13, 128)
     model = tf.keras.layers.SeparableConv2D(
         filters=128,
@@ -59,7 +62,8 @@ def yolo_model(
         strides=2,
         kernel_initializer=kernel_initializer,
         use_bias=False)(model)
-    model = LayerWrapper.bn_lrelu(model)
+    model = tf.keras.layers.BatchNormalization()(model)
+    model = tf.keras.layers.LeakyReLU(alpha=.1)(model)
     # (13, 13, 128) -> (13, 13, 5 + num_classes)
     model = tf.keras.layers.SeparableConv2D(
         filters=5 + num_classes,
