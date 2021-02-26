@@ -29,11 +29,12 @@ def load_data():
             lines = reader.readlines()
             for line in lines:
                 c, x, y, w, h = line[:-1].split(" ")
+                c, x, y, w, h = int(c), float(x), float(y), float(w), float(h)
 
-                x1 = (float(x) - float(w) * .5) * target_width
-                y1 = (float(y) - float(h) * .5) * target_height
-                x2 = (float(x) + float(w) * .5) * target_width
-                y2 = (float(y) + float(h) * .5) * target_height
+                x1 = (x - w * .5) * target_width
+                y1 = (y - h * .5) * target_height
+                x2 = (x + w * .5) * target_width
+                y2 = (y + h * .5) * target_height
 
                 grid_x, grid_y, x, y, w, h = convert_abs_to_yolo(
                     target_width,
@@ -41,12 +42,13 @@ def load_data():
                     grid_width_ratio,
                     grid_height_ratio,
                     [(x1 + x2) * .5, (y1 + y2) * .5, x2 - x1, y2 - y1])
-                label_tensor[grid_y, grid_x, 0] = x
-                label_tensor[grid_y, grid_x, 1] = y
-                label_tensor[grid_y, grid_x, 2] = w
-                label_tensor[grid_y, grid_x, 3] = h
+
+                label_tensor[grid_y, grid_x, 0] = x + grid_x
+                label_tensor[grid_y, grid_x, 1] = y + grid_y
+                label_tensor[grid_y, grid_x, 2] = w * grid_width_ratio
+                label_tensor[grid_y, grid_x, 3] = h * grid_height_ratio
                 label_tensor[grid_y, grid_x, 4] = 1.
-                label_tensor[grid_y, grid_x, 5 + int(c)] = 1.
+                label_tensor[grid_y, grid_x, 5 + c] = 1.
         _y_data.append(label_tensor)
 
     futures = []

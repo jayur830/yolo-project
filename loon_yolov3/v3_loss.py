@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from losses import sum_squared_error
-from loon_yolov3.common import anchor_width, anchor_height
+from loon_yolov3.common import grid_width_ratio, grid_height_ratio, anchor_width, anchor_height
 
 
 def yolov3_loss(y_true, y_pred):
@@ -24,13 +24,26 @@ def yolov3_loss(y_true, y_pred):
     return xy_loss + w_loss + h_loss + confidence_loss + class_loss
 
 
-# def iou(y_true, y_pred) -> tf.Tensor:
-#
-#
-#     intersection = intersection_width * intersection_height
-#
-#     y_true_area = y_true[:, :, :, 2] * y_true[:, :, :, 3]
-#     y_pred_area = anchor_width * anchor_height * tf.exp(y_pred[:, :, :, 2] + y_pred[:, :, :, 3])
-#
-#     union = y_true_area + y_pred_area - intersection
-#     return intersection / union
+def iou(y_true, y_pred) -> tf.Tensor:
+    a_x1 = y_true[:, :, :, 0] - y_true[:, :, :, 2] * .5
+    a_y1 = y_true[:, :, :, 1] - y_true[:, :, :, 3] * .5
+    a_x2 = y_true[:, :, :, 0] + y_true[:, :, :, 2] * .5
+    a_y2 = y_true[:, :, :, 1] + y_true[:, :, :, 3] * .5
+
+    b_x1 = y_pred[:, :, :, 0] - y_pred[:, :, :, 2] * .5
+    b_y1 = y_pred[:, :, :, 1] - y_pred[:, :, :, 3] * .5
+    b_x2 = y_pred[:, :, :, 0] + y_pred[:, :, :, 2] * .5
+    b_y2 = y_pred[:, :, :, 1] + y_pred[:, :, :, 3] * .5
+
+    intersection = (tf.minimum(a_x2, b_x2) - tf.maximum(a_x1, b_x1)) * (tf.minimum(a_y2, b_y2) - tf.maximum(a_y1, b_y1))
+    union = y_true[:, :, :, 2] * y_true[:, :, :, 3] + y_pred[:, :, :, 2] * y_pred[:, :, :, 3] - intersection
+
+    return intersection / union
+
+
+import numpy as np
+
+if __name__ == '__main__':
+    arr = np.arange(5) + np.zeros(shape=(3, 5))
+    print(arr)
+    print(tf.transpose(tf.range(3, dtype=tf.float32) + tf.zeros(shape=(5, 3))))

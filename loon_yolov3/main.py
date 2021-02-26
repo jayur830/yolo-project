@@ -26,8 +26,6 @@ if __name__ == '__main__':
 
     model = yolo_model()
 
-    sigmoid = lambda x: 1 / (1 + math.exp(-x))
-
     def on_batch_end(_1, logs):
         global step, step_interval
         if step >= x_train.shape[0]:
@@ -42,19 +40,11 @@ if __name__ == '__main__':
             output = model.predict(x)
             vectors = high_confidence_vector(output[0])
             for vector in vectors:
-                x1, y1, x2, y2 = convert_yolo_to_abs(
-                    target_width,
-                    target_height,
-                    grid_width_ratio,
-                    grid_height_ratio,
-                    [
-                        vector[0],
-                        vector[1],
-                        sigmoid(vector[2]),
-                        sigmoid(vector[3]),
-                        anchor_width * math.exp(vector[4]),
-                        anchor_height * math.exp(vector[5])
-                    ])
+                x1, y1, x2, y2 = \
+                    (vector[2] - vector[4] * .5) * target_width / grid_width_ratio, \
+                    (vector[3] - vector[5] * .5) * target_height / grid_height_ratio, \
+                    (vector[2] + vector[4] * .5) * target_width / grid_width_ratio, \
+                    (vector[3] + vector[5] * .5) * target_height / grid_height_ratio
                 img = cv2.rectangle(
                     img=img,
                     pt1=(round(x1), round(y1)),
@@ -91,20 +81,11 @@ if __name__ == '__main__':
         output = model.predict(x_test[i].reshape((1,) + x_test[i].shape))
         vectors = high_confidence_vector(output[0])
         for vector in vectors:
-            print(vector)
-            x1, y1, x2, y2 = convert_yolo_to_abs(
-                target_width,
-                target_height,
-                grid_width_ratio,
-                grid_height_ratio,
-                [
-                    vector[0],
-                    vector[1],
-                    sigmoid(vector[2]),
-                    sigmoid(vector[3]),
-                    anchor_width * math.exp(vector[4]),
-                    anchor_height * math.exp(vector[5])
-                ])
+            x1, y1, x2, y2 = \
+                (vector[2] - vector[4] * .5) * target_width / grid_width_ratio, \
+                (vector[3] - vector[5] * .5) * target_height / grid_height_ratio, \
+                (vector[2] + vector[4] * .5) * target_width / grid_width_ratio, \
+                (vector[3] + vector[5] * .5) * target_height / grid_height_ratio
             img = cv2.rectangle(
                 img=img,
                 pt1=(round(x1), round(y1)),

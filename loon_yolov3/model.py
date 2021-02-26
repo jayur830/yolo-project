@@ -1,7 +1,8 @@
 import tensorflow as tf
 
-from loon_yolov3.common import target_width, target_height
-from loon_yolov3.v3_loss import yolov3_loss
+from loon_yolov3.common import target_width, target_height, grid_width_ratio, grid_height_ratio, anchor_width, anchor_height
+from losses import yolo_loss
+from loon_yolov3.yolov3_output_layer import YoloOutput
 
 
 def yolo_model(kernel_initializer: str = "he_normal"):
@@ -87,7 +88,8 @@ def yolo_model(kernel_initializer: str = "he_normal"):
         filters=9,
         kernel_size=1,
         kernel_initializer=kernel_initializer)(model)
-    model = tf.keras.layers.Activation(tf.keras.activations.linear)(model)
+    # model = tf.keras.layers.Activation(tf.keras.activations.linear)(model)
+    model = YoloOutput(grid_width_ratio, grid_height_ratio, anchor_width, anchor_height)(model)
 
     model = tf.keras.models.Model(input_layer, model)
 
@@ -142,7 +144,7 @@ def yolo_model(kernel_initializer: str = "he_normal"):
     model.summary()
     model.compile(
         optimizer=tf.optimizers.Adam(learning_rate=1e-2),
-        loss=yolov3_loss)
+        loss=yolo_loss)
 
     return model
 
