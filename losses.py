@@ -14,15 +14,18 @@ def yolo_loss(y_true, y_pred):
     p_channel = y_true[:, :, :, 4]
 
     xy_loss = lambda_coord * tf.reduce_sum(sum_squared_error(y_true[:, :, :, :2], y_pred[:, :, :, :2], axis=-1) * p_channel)
-    wh_loss = lambda_coord * tf.reduce_sum(sum_squared_error(y_true[:, :, :, 2:4] ** .5, y_pred[:, :, :, 2:4] ** .5, axis=-1) * p_channel)
-    conf_loss = tf.reduce_sum(
-        tf.square(y_true[:, :, :, 4] - y_pred[:, :, :, 4]) * tf.where(
-            tf.cast(p_channel, dtype=tf.bool),
-            tf.ones(shape=tf.shape(input=p_channel)),
-            tf.ones(shape=tf.shape(input=p_channel)) * lambda_noobj))
-    class_loss = tf.reduce_sum(sum_squared_error(y_true[:, :, :, 5:], y_pred[:, :, :, 5:], axis=-1) * p_channel)
-
-    return xy_loss + wh_loss + conf_loss + class_loss
+    # xy_loss = 0.
+    wh_loss = lambda_coord * tf.reduce_sum(sum_squared_error(y_true[:, :, :, 2:4], y_pred[:, :, :, 2:4], axis=-1) * p_channel)
+    # wh_loss = 0.
+    # confidence_loss = tf.reduce_sum(
+    #     tf.square(y_true[:, :, :, 4] - y_pred[:, :, :, 4]) * tf.where(
+    #         tf.cast(p_channel, dtype=tf.bool),
+    #         tf.ones(shape=tf.shape(input=p_channel)),
+    #         tf.ones(shape=tf.shape(input=p_channel)) * lambda_noobj))
+    confidence_loss = 0.
+    # class_loss = tf.reduce_sum(sum_squared_error(y_true[:, :, :, 5:], y_pred[:, :, :, 5:], axis=-1) * p_channel)
+    class_loss = 0.
+    return xy_loss + wh_loss + confidence_loss + class_loss
 
 
 class YoloLoss(tf.keras.losses.Loss):

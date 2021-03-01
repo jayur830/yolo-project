@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 import cv2
 import os
 import math
@@ -18,6 +19,7 @@ from loon_yolov3.common import \
 step = 0
 step_interval = 20
 batch_size = 2
+epochs = 1000
 
 os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
 
@@ -25,6 +27,13 @@ if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = load_data()
 
     model = yolo_model()
+
+    def sigmoid(x):
+        return 1 / (1 + math.exp(-x))
+
+    def on_batch_begin(_, logs):
+        x = cv2.resize(x_train[0].copy(), (target_width, target_height), interpolation=cv2.INTER_AREA)
+        print(np.asarray(model(x.reshape((1,) + x.shape))))
 
     def on_batch_end(_1, logs):
         global step, step_interval
@@ -36,15 +45,16 @@ if __name__ == '__main__':
                 src=img,
                 dsize=(target_width, target_height),
                 interpolation=cv2.INTER_AREA)
-            x = x.reshape((1,) + x.shape)
-            output = model.predict(x)
+            output = np.asarray(model(x.reshape((1,) + x.shape)))
             vectors = high_confidence_vector(output[0])
             for vector in vectors:
+                # vector = [c_x, c_y, t_x, t_y, t_w, t_h]
+                c_x, c_y, t_x, t_y, t_w, t_h, class_index = vector
                 x1, y1, x2, y2 = \
-                    (vector[2] - vector[4] * .5) * target_width / grid_width_ratio, \
-                    (vector[3] - vector[5] * .5) * target_height / grid_height_ratio, \
-                    (vector[2] + vector[4] * .5) * target_width / grid_width_ratio, \
-                    (vector[3] + vector[5] * .5) * target_height / grid_height_ratio
+                    t_x + c_x, \
+                    t_y + c_y, \
+                    anchor_width * math.exp(t_w), \
+                    anchor_height * math.exp(t_h)
                 img = cv2.rectangle(
                     img=img,
                     pt1=(round(x1), round(y1)),
@@ -53,7 +63,7 @@ if __name__ == '__main__':
                     thickness=2)
                 img = cv2.putText(
                     img=img,
-                    text=category_index[vector[-1]],
+                    text=category_index[class_index],
                     org=(round(x1), round(y1)),
                     fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                     fontScale=.5,
@@ -66,7 +76,7 @@ if __name__ == '__main__':
     model.fit(
         x=x_train,
         y=y_train,
-        epochs=200,
+        epochs=epochs,
         batch_size=batch_size,
         validation_split=.2,
         callbacks=[
@@ -82,10 +92,10 @@ if __name__ == '__main__':
         vectors = high_confidence_vector(output[0])
         for vector in vectors:
             x1, y1, x2, y2 = \
-                (vector[2] - vector[4] * .5) * target_width / grid_width_ratio, \
-                (vector[3] - vector[5] * .5) * target_height / grid_height_ratio, \
-                (vector[2] + vector[4] * .5) * target_width / grid_width_ratio, \
-                (vector[3] + vector[5] * .5) * target_height / grid_height_ratio
+                sigmoid(vector[2]) + vector[0], \
+                sigmoid(vector[3]) + vector[1], \
+                anchor_width * math.exp(vector[4]), \
+                anchor_height * math.exp(vector[5])
             img = cv2.rectangle(
                 img=img,
                 pt1=(round(x1), round(y1)),
