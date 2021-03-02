@@ -1,8 +1,7 @@
 import tensorflow as tf
 
-from loon_yolov3.common import target_width, target_height, grid_width_ratio, grid_height_ratio, anchor_width, anchor_height
 from losses import yolo_loss
-from loon_yolov3.yolo_output_layer import YoloOutputLayer
+from loon_yolov3.common import target_width, target_height
 
 
 def yolo_model(kernel_initializer: str = "he_normal"):
@@ -67,13 +66,16 @@ def yolo_model(kernel_initializer: str = "he_normal"):
         filters=9,
         kernel_size=1,
         kernel_initializer=kernel_initializer)(model)
-    model = tf.keras.layers.Lambda(lambda x: tf.concat([x[:, :, :, :4], tf.sigmoid(x[:, :, :, 4:])], axis=-1))(model)
+    # model = tf.keras.layers.Activation(tf.keras.activations.sigmoid)(model)
+    # model = tf.keras.layers.Lambda(lambda x: tf.concat([tf.sigmoid(x[:, :, :, :2]), x[:, :, :, 2:4], tf.sigmoid(x[:, :, :, 4:])], axis=-1))(model)
+
+    model = tf.keras.layers.Lambda(lambda x: tf.concat([tf.sigmoid(x[:, :, :, :2]), tf.exp(x[:, :, :, 2:4]), tf.sigmoid(x[:, :, :, 4:])], axis=-1))(model)
 
     model = tf.keras.models.Model(input_layer, model)
 
     model.summary()
     model.compile(
-        optimizer=tf.optimizers.Adam(learning_rate=1e-2),
+        optimizer=tf.optimizers.Adam(learning_rate=1e-3),
         loss=yolo_loss)
 
     return model

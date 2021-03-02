@@ -10,6 +10,7 @@ from loon.common import target_width, target_height, grid_width_ratio, grid_heig
 step = 0
 step_interval = 20
 batch_size = 2
+epochs = 200
 
 os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
 
@@ -17,7 +18,7 @@ if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = load_data()
     model = yolo_model()
 
-    def on_batch_end(_1, logs):
+    def imshow(_1, logs):
         global step, step_interval
         if step >= x_train.shape[0]:
             step = 0
@@ -53,12 +54,10 @@ if __name__ == '__main__':
     model.fit(
         x=x_train,
         y=y_train,
-        epochs=200,
+        epochs=epochs,
         batch_size=batch_size,
         validation_split=.2,
-        callbacks=[
-            tf.keras.callbacks.LambdaCallback(on_batch_end=on_batch_end)
-        ])
+        callbacks=[tf.keras.callbacks.LambdaCallback(on_batch_end=imshow)])
 
     model.save(filepath="model.h5")
     model = tf.keras.models.load_model(filepath="model.h5", compile=False)

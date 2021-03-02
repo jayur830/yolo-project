@@ -30,7 +30,17 @@ def load_data():
                 _, x, y, w, h = line[:-1].split(" ")
                 x, y, w, h = float(x) * target_width, float(y) * target_height, float(w) * target_width, float(h) * target_height
                 x1, y1, x2, y2 = x - w * .5, y - h * .5, x + w * .5, y + h * .5
-                grid_x, grid_y, x, y, w, h = convert_abs_to_yolo(target_width, target_height, grid_width_ratio, grid_height_ratio, [(x1 + x2) * .5, (y1 + y2) * .5, x2 - x1, y2 - y1])
+                grid_x, grid_y, x, y, w, h = convert_abs_to_yolo(
+                    target_width,
+                    target_height,
+                    grid_width_ratio,
+                    grid_height_ratio,
+                    [
+                        (x1 + x2) * .5,
+                        (y1 + y2) * .5,
+                        x2 - x1,
+                        y2 - y1
+                    ])
 
                 label_tensor[grid_y, grid_x, 0] = x
                 label_tensor[grid_y, grid_x, 1] = y
