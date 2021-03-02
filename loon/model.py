@@ -140,7 +140,7 @@ def yolo_model(kernel_initializer: str = "he_normal"):
 
     model.summary()
     model.compile(
-        optimizer=tf.optimizers.Adam(learning_rate=1e-2),
+        optimizer=tf.optimizers.Adam(learning_rate=1e-3),
         loss=yolo_loss)
 
     return model

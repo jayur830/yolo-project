@@ -18,23 +18,26 @@ from loon_yolov3.common import \
 
 
 def load_data():
+    # path = "D:/Dataset/loon_rpn_split"
+    path = "E:/Dataset/image/loon_rpn_split"
+
     x_data, y_data = [], []
-    # img_list = glob("D:/Dataset/loon_rpn_split/*.jpg")
-    img_list = glob("../loon/loon_rpn_split/*.jpg")
+    # img_list = glob(f"{path}/*.jpg")
+    img_list = glob(f"{path}/*.jpg")
     executor = ThreadPoolExecutor(16)
 
     def load(filename, _x_data, _y_data):
         filename = filename[filename.find("\\") + 1:filename.find(".jpg")]
 
         img = cv2.resize(
-            src=cv2.imread(f"../loon/loon_rpn_split/{filename}.jpg"),
+            src=cv2.imread(f"{path}/{filename}.jpg"),
             dsize=(target_width, target_height),
             interpolation=cv2.INTER_AREA) / 255.
         _x_data.append(img)
 
         label_tensor = np.zeros(shape=(grid_height_ratio, grid_width_ratio, 5 + len(category)))
 
-        with open(f"../loon/loon_rpn_split/{filename}.txt", "r") as reader:
+        with open(f"{path}/{filename}.txt", "r") as reader:
             lines = reader.readlines()
             for line in lines:
                 c, x, y, w, h = line[:-1].split(" ")
@@ -59,8 +62,8 @@ def load_data():
 
                 # label_tensor[grid_y, grid_x, 0] = math.log(x / (1 - x) + 1e-5)
                 # label_tensor[grid_y, grid_x, 1] = math.log(y / (1 - y) + 1e-5)
-                label_tensor[grid_y, grid_x, 2] = math.log(w / anchor_width + 1e-5)
-                label_tensor[grid_y, grid_x, 3] = math.log(h / anchor_height + 1e-5)
+                label_tensor[grid_y, grid_x, 2] = math.log(grid_width_ratio * w / anchor_width + 1e-5)
+                label_tensor[grid_y, grid_x, 3] = math.log(grid_height_ratio * h / anchor_height + 1e-5)
 
                 label_tensor[grid_y, grid_x, 4] = 1.
                 label_tensor[grid_y, grid_x, 5 + c] = 1.

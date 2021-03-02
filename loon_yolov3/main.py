@@ -51,10 +51,10 @@ if __name__ == '__main__':
                 # vector = [c_x, c_y, t_x, t_y, t_w, t_h]
                 c_x, c_y, t_x, t_y, t_w, t_h, class_index = vector
                 x1, y1, x2, y2 = \
-                    t_x + c_x, \
-                    t_y + c_y, \
-                    anchor_width * math.exp(t_w), \
-                    anchor_height * math.exp(t_h)
+                    target_width * (sigmoid(t_x) + c_x) / grid_width_ratio, \
+                    target_height * (sigmoid(t_y) + c_y) / grid_height_ratio, \
+                    target_width * (anchor_width * math.exp(t_w)) / grid_width_ratio, \
+                    target_height * (anchor_height * math.exp(t_h)) / grid_height_ratio
                 img = cv2.rectangle(
                     img=img,
                     pt1=(round(x1), round(y1)),

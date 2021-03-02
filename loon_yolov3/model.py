@@ -67,14 +67,13 @@ def yolo_model(kernel_initializer: str = "he_normal"):
         filters=9,
         kernel_size=1,
         kernel_initializer=kernel_initializer)(model)
-    model = tf.keras.layers.Activation(tf.keras.activations.linear)(model)
-    model = tf.keras.layers.Lambda(lambda x: tf.concat([tf.sigmoid(x[:, :, :, :2]), x[:, :, :, 2:4], tf.sigmoid(x[:, :, :, 4:])], axis=-1))(model)
+    model = tf.keras.layers.Lambda(lambda x: tf.concat([x[:, :, :, :4], tf.sigmoid(x[:, :, :, 4:])], axis=-1))(model)
 
     model = tf.keras.models.Model(input_layer, model)
 
     model.summary()
     model.compile(
-        optimizer=tf.optimizers.RMSprop(learning_rate=1e-3),
+        optimizer=tf.optimizers.Adam(learning_rate=1e-2),
         loss=yolo_loss)
 
     return model

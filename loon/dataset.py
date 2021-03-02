@@ -10,22 +10,25 @@ from loon.common import target_width, target_height, grid_width_ratio, grid_heig
 
 
 def load_data():
+    # path = "D:/Dataset/loon_rpn_split"
+    path = "E:/Dataset/image/loon_rpn_split"
+
     x_data, y_data = [], []
-    img_list = glob("D:/Dataset/loon_rpn_split/*.jpg")
+    img_list = glob(f"{path}/*.jpg")
     executor = ThreadPoolExecutor(16)
 
     def load(filename, _x_data, _y_data):
         filename = filename[filename.find("\\") + 1:filename.find(".jpg")]
 
         img = cv2.resize(
-            src=cv2.imread(f"D:/Dataset/loon_rpn_split/{filename}.jpg"),
+            src=cv2.imread(f"{path}/{filename}.jpg"),
             dsize=(target_width, target_height),
             interpolation=cv2.INTER_AREA)
         _x_data.append(img)
 
         label_tensor = np.zeros(shape=(grid_height_ratio, grid_width_ratio, 5 + len(category)))
 
-        with open(f"D:/Dataset/loon_rpn_split/{filename}.txt", "r") as reader:
+        with open(f"{path}/{filename}.txt", "r") as reader:
             lines = reader.readlines()
             for line in lines:
                 c, x, y, w, h = line[:-1].split(" ")
