@@ -7,7 +7,13 @@ import math
 from loon_yolov3.dataset import load_data
 from loon_yolov3.model import yolo_model
 from utils import high_confidence_vector, convert_yolo_to_abs
-from loon_yolov3.common import target_width, target_height, grid_width_ratio, grid_height_ratio, anchor_width, anchor_height, category_index
+from loon_yolov3.common import \
+    target_width, \
+    target_height, \
+    grid_width_ratio, \
+    grid_height_ratio, \
+    anchor_width, \
+    anchor_height
 
 step = 0
 step_interval = 20
@@ -17,7 +23,7 @@ epochs = 200
 os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
 
 if __name__ == '__main__':
-    (x_train, y_train), (x_test, y_test) = load_data()
+    (x_train, y_train), (x_test, y_test), classes = load_data()
     model = yolo_model()
 
     def on_batch_end(_1, logs):
@@ -49,8 +55,8 @@ if __name__ == '__main__':
                     thickness=2)
                 img = cv2.putText(
                     img=img,
-                    text=category_index[class_index],
-                    org=(round(x1), round(y1)),
+                    text=classes[class_index],
+                    org=(round(x1), round(y1) - 5),
                     fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                     fontScale=.5,
                     color=(0, 0, 255),
@@ -91,7 +97,7 @@ if __name__ == '__main__':
                 thickness=2)
             img = cv2.putText(
                 img=img,
-                text=category_index[class_index],
+                text=classes[class_index],
                 org=(round(x1), round(y1) - 5),
                 fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                 fontScale=.5,

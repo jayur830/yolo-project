@@ -5,7 +5,11 @@ import os
 from loon.dataset import load_data
 from loon.model import yolo_model
 from utils import high_confidence_vector, convert_yolo_to_abs
-from loon.common import target_width, target_height, grid_width_ratio, grid_height_ratio, category_index
+from loon.common import \
+    target_width, \
+    target_height, \
+    grid_width_ratio, \
+    grid_height_ratio
 
 step = 0
 step_interval = 20
@@ -15,7 +19,7 @@ epochs = 200
 os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
 
 if __name__ == '__main__':
-    (x_train, y_train), (x_test, y_test) = load_data()
+    (x_train, y_train), (x_test, y_test), classes = load_data()
     model = yolo_model()
 
     def imshow(_1, logs):
@@ -41,7 +45,7 @@ if __name__ == '__main__':
                     thickness=2)
                 img = cv2.putText(
                     img=img,
-                    text=category_index[vector[-1]],
+                    text=classes[vector[-1]],
                     org=(round(x1), round(y1)),
                     fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                     fontScale=.5,
@@ -77,7 +81,7 @@ if __name__ == '__main__':
                 thickness=2)
             img = cv2.putText(
                 img=img,
-                text=category_index[vector[-1]],
+                text=classes[vector[-1]],
                 org=(round(x1), round(y1) - 5),
                 fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                 fontScale=.5,

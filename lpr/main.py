@@ -1,5 +1,6 @@
 import tensorflow as tf
 import cv2
+import os
 
 from lpr.dataset import load_data
 from lpr.model import yolo_model
@@ -10,12 +11,13 @@ step = 0
 step_interval = 10
 batch_size = 2
 
+os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
 
 if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = load_data()
     model = yolo_model()
 
-    def imshow(_1, logs):
+    def on_batch_end(_1, logs):
         global step, step_interval
         if step >= x_train.shape[0]:
             step = 0
@@ -29,7 +31,13 @@ if __name__ == '__main__':
             output = model.predict(x)
             vectors = high_confidence_vector(output[0])
             for vector in vectors:
-                x1, y1, x2, y2 = convert_yolo_to_abs(target_width, target_height, grid_width_ratio, grid_height_ratio, vector)
+                c_x, c_y, t_x, t_y, t_w, t_h = vector
+                b_x = (t_x + c_x) * target_width / grid_width_ratio
+                b_y = (t_y + c_y) * target_height / grid_height_ratio
+                b_w = t_w * target_width
+                b_h = t_h * target_height
+                x1, y1, x2, y2 = int(b_x - b_w * .5), int(b_y - b_h * .5), int(b_x + b_w * .5), int(b_y + b_h * .5)
+
                 img = cv2.rectangle(
                     img=img,
                     pt1=(round(x1), round(y1)),
@@ -54,7 +62,7 @@ if __name__ == '__main__':
         epochs=100,
         batch_size=batch_size,
         validation_split=.2,
-        callbacks=[tf.keras.callbacks.LambdaCallback(on_batch_end=imshow)])
+        callbacks=[tf.keras.callbacks.LambdaCallback(on_batch_end=on_batch_end)])
 
     model.save(filepath="model.h5")
     model = tf.keras.models.load_model(filepath="model.h5", compile=False)
@@ -64,7 +72,14 @@ if __name__ == '__main__':
         output = model.predict(x_test[i].reshape((1,) + x_test[i].shape))
         vectors = high_confidence_vector(output[0])
         for vector in vectors:
-            x1, y1, x2, y2 = convert_yolo_to_abs(target_width, target_height, grid_width_ratio, grid_height_ratio, vector)
+            print(vector)
+            c_x, c_y, t_x, t_y, t_w, t_h = vector
+            b_x = (t_x + c_x) * target_width / grid_width_ratio
+            b_y = (t_y + c_y) * target_height / grid_height_ratio
+            b_w = t_w * target_width
+            b_h = t_h * target_height
+            x1, y1, x2, y2 = int(b_x - b_w * .5), int(b_y - b_h * .5), int(b_x + b_w * .5), int(b_y + b_h * .5)
+
             img = cv2.rectangle(
                 img=img,
                 pt1=(round(x1), round(y1)),
@@ -79,5 +94,6 @@ if __name__ == '__main__':
                 fontScale=.5,
                 color=(0, 0, 255),
                 thickness=2)
+        print("=" * 40)
         cv2.imshow("test", img)
         cv2.waitKey()
