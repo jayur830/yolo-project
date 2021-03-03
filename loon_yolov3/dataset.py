@@ -14,9 +14,9 @@ from loon_yolov3.common import \
     anchor_height
 
 
-def load_data(test_split: float = .2):
-    paths = ["D:/Dataset/loon_rpn_split"]
-    # paths = "E:/Dataset/image/loon_rpn_split"
+def load_data(shuffle: bool = True, validation_split: float = .2):
+    # paths = ["D:/Dataset/loon_rpn_split"]
+    paths = ["E:/Dataset/image/loon_rpn_split"]
 
     x_data, y_data = [], []
 
@@ -53,18 +53,22 @@ def load_data(test_split: float = .2):
     for path in paths:
         img_list = glob(f"{path}/*.jpg")
         with open(f"{path}/classes.txt", "r") as reader:
-            classes += [label[:-1] for label in reader.readlines()]
+            _classes = [label[:-1] for label in reader.readlines()]
 
         futures = []
         for filename in tqdm(img_list):
-            futures.append(executor.submit(load, filename, len(classes)))
+            futures.append(executor.submit(load, filename, path, len(_classes)))
         for future in tqdm(futures):
             future.result()
+        classes += _classes
 
     x_data, y_data = np.asarray(x_data), np.asarray(y_data)
-    indexes = np.arange(x_data.shape[0])
-    np.random.shuffle(indexes)
-    x_data, y_data = x_data[indexes], y_data[indexes]
 
-    return (x_data[:int(x_data.shape[0] * (1 - test_split))], y_data[:int(y_data.shape[0] * (1 - test_split))]), \
-           (x_data[int(x_data.shape[0] * (1 - test_split)):], y_data[int(y_data.shape[0] * (1 - test_split)):]), classes
+    if shuffle:
+        indexes = np.arange(x_data.shape[0])
+        np.random.shuffle(indexes)
+        x_data, y_data = x_data[indexes], y_data[indexes]
+        return (x_data[:int(x_data.shape[0] * (1 - validation_split))], y_data[:int(y_data.shape[0] * (1 - validation_split))]), \
+               (x_data[int(x_data.shape[0] * (1 - validation_split)):], y_data[int(y_data.shape[0] * (1 - validation_split)):]), classes
+    else:
+        return x_data, y_data

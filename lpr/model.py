@@ -53,15 +53,16 @@ def yolo_model(
     model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (23, 40, 64) -> (23, 40, 5)
     model = tf.keras.layers.Conv2D(
-        filters=5,
+        filters=6,
         kernel_size=1,
         kernel_initializer=kernel_initializer)(model)
-    model = tf.keras.layers.Activation(tf.keras.activations.sigmoid)(model)
+    # model = tf.keras.layers.Activation(tf.keras.activations.sigmoid)(model)
+    model = tf.keras.layers.Lambda(lambda x: tf.concat([tf.sigmoid(x[:, :, :, :2]), tf.exp(x[:, :, :, 2:4]), tf.sigmoid(x[:, :, :, 4:])], axis=-1))(model)
 
     model = tf.keras.models.Model(input_layer, model)
     model.summary()
     model.compile(
-        optimizer=tf.optimizers.RMSprop(learning_rate=1e-3),
+        optimizer=tf.optimizers.Adam(learning_rate=1e-4),
         loss=yolo_loss)
 
     return model

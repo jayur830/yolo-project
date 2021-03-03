@@ -5,7 +5,13 @@ import os
 from lpr.dataset import load_data
 from lpr.model import yolo_model
 from utils import gpu_init, high_confidence_vector, convert_yolo_to_abs
-from lpr.common import target_width, target_height, grid_width_ratio, grid_height_ratio
+from lpr.common import \
+    target_width, \
+    target_height, \
+    grid_width_ratio, \
+    grid_height_ratio, \
+    anchor_width, \
+    anchor_height
 
 step = 0
 step_interval = 10
@@ -14,7 +20,7 @@ batch_size = 2
 os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
 
 if __name__ == '__main__':
-    (x_train, y_train), (x_test, y_test) = load_data()
+    (x_train, y_train), (x_test, y_test), classes = load_data()
     model = yolo_model()
 
     def on_batch_end(_1, logs):
@@ -31,11 +37,11 @@ if __name__ == '__main__':
             output = model.predict(x)
             vectors = high_confidence_vector(output[0])
             for vector in vectors:
-                c_x, c_y, t_x, t_y, t_w, t_h = vector
+                c_x, c_y, t_x, t_y, t_w, t_h, class_index = vector
                 b_x = (t_x + c_x) * target_width / grid_width_ratio
                 b_y = (t_y + c_y) * target_height / grid_height_ratio
-                b_w = t_w * target_width
-                b_h = t_h * target_height
+                b_w = t_w * target_width * anchor_width
+                b_h = t_h * target_height * anchor_height
                 x1, y1, x2, y2 = int(b_x - b_w * .5), int(b_y - b_h * .5), int(b_x + b_w * .5), int(b_y + b_h * .5)
 
                 img = cv2.rectangle(
@@ -46,7 +52,7 @@ if __name__ == '__main__':
                     thickness=2)
                 img = cv2.putText(
                     img=img,
-                    text="License plate",
+                    text=classes[class_index],
                     org=(round(x1), round(y1) - 5),
                     fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                     fontScale=.5,
@@ -73,11 +79,11 @@ if __name__ == '__main__':
         vectors = high_confidence_vector(output[0])
         for vector in vectors:
             print(vector)
-            c_x, c_y, t_x, t_y, t_w, t_h = vector
+            c_x, c_y, t_x, t_y, t_w, t_h, class_index = vector
             b_x = (t_x + c_x) * target_width / grid_width_ratio
             b_y = (t_y + c_y) * target_height / grid_height_ratio
-            b_w = t_w * target_width
-            b_h = t_h * target_height
+            b_w = t_w * target_width * anchor_width
+            b_h = t_h * target_height * anchor_height
             x1, y1, x2, y2 = int(b_x - b_w * .5), int(b_y - b_h * .5), int(b_x + b_w * .5), int(b_y + b_h * .5)
 
             img = cv2.rectangle(
@@ -88,7 +94,7 @@ if __name__ == '__main__':
                 thickness=2)
             img = cv2.putText(
                 img=img,
-                text="License plate",
+                text=classes[class_index],
                 org=(round(x1), round(y1) - 5),
                 fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                 fontScale=.5,
