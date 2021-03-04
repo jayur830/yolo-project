@@ -17,6 +17,66 @@ def gpu_init():
             print(e)
 
 
+@tf.function
+def predict(model, x):
+    return model(x)
+
+
+step = 0
+
+def on_batch_end(
+        model,
+        x_data,
+        classes,
+        batch_size,
+        target_width,
+        target_height,
+        grid_width_ratio,
+        grid_height_ratio,
+        anchor_width,
+        anchor_height,
+        step_interval):
+    def _on_batch_end(_1, logs):
+        global step
+        if step >= x_data.shape[0]:
+            step = 0
+        elif step % step_interval == 0:
+            img = x_data[step].copy()
+            x = cv2.resize(
+                src=img,
+                dsize=(target_width, target_height),
+                interpolation=cv2.INTER_AREA)
+            x = x.reshape((1,) + x.shape)
+            output = np.asarray(predict(model, x))
+            vectors = high_confidence_vector(output[0])
+            for vector in vectors:
+                c_x, c_y, t_x, t_y, t_w, t_h, class_index = vector
+                b_x = (t_x + c_x) * target_width / grid_width_ratio
+                b_y = (t_y + c_y) * target_height / grid_height_ratio
+                b_w = t_w * target_width * anchor_width / grid_width_ratio
+                b_h = t_h * target_height * anchor_height / grid_height_ratio
+                x1, y1, x2, y2 = int(b_x - b_w * .5), int(b_y - b_h * .5), int(b_x + b_w * .5), int(b_y + b_h * .5)
+
+                img = cv2.rectangle(
+                    img=img,
+                    pt1=(round(x1), round(y1)),
+                    pt2=(round(x2), round(y2)),
+                    color=(0, 0, 255),
+                    thickness=2)
+                img = cv2.putText(
+                    img=img,
+                    text=classes[class_index],
+                    org=(round(x1), round(y1) - 5),
+                    fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                    fontScale=.5,
+                    color=(0, 0, 255),
+                    thickness=2)
+            cv2.imshow("test", img)
+            cv2.waitKey(1)
+        step += batch_size
+    return _on_batch_end
+
+
 """
 # bbox: [x, y, w, h]
 # yolo_loc: [grid_x, grid_y, x, y, w, h]

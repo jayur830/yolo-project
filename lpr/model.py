@@ -5,7 +5,9 @@ from lpr.common import target_width, target_height
 
 
 def yolo_model(
+        num_classes: int,
         kernel_initializer: str = "he_normal",
+        learning_rate: float = 1e-3,
         bn_momentum: float = .9,
         lrelu_alpha: float = .1):
     input_layer = tf.keras.layers.Input(shape=(target_height, target_width, 3))
@@ -53,16 +55,21 @@ def yolo_model(
     model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (23, 40, 64) -> (23, 40, 5)
     model = tf.keras.layers.Conv2D(
-        filters=6,
+        filters=5 + num_classes,
         kernel_size=1,
         kernel_initializer=kernel_initializer)(model)
-    # model = tf.keras.layers.Activation(tf.keras.activations.sigmoid)(model)
+    """
+    x, y: sigmoid
+    w, h: exp
+    confidence, classes: sigmoid
+    """
     model = tf.keras.layers.Lambda(lambda x: tf.concat([tf.sigmoid(x[:, :, :, :2]), tf.exp(x[:, :, :, 2:4]), tf.sigmoid(x[:, :, :, 4:])], axis=-1))(model)
 
     model = tf.keras.models.Model(input_layer, model)
+
     model.summary()
     model.compile(
-        optimizer=tf.optimizers.Adam(learning_rate=1e-4),
+        optimizer=tf.optimizers.Adam(learning_rate=learning_rate),
         loss=yolo_loss)
 
     return model

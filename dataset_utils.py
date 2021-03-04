@@ -1,21 +1,21 @@
-import cv2
 import numpy as np
+import cv2
 
-from glob import glob
 from tqdm import tqdm
+from glob import glob
 from concurrent.futures import ThreadPoolExecutor
 
-from loon.common import \
-    target_width, \
-    target_height, \
-    grid_width_ratio, \
-    grid_height_ratio
 
-
-def load_data(shuffle: bool = True, validation_split: float = .2):
-    # paths = ["D:/Dataset/loon_rpn_split"]
-    paths = ["E:/Dataset/image/loon_rpn_split"]
-
+def load_data(
+        paths: [str],
+        target_width: int,
+        target_height: int,
+        grid_width_ratio: int,
+        grid_height_ratio: int,
+        anchor_width: float,
+        anchor_height: float,
+        shuffle: bool = True,
+        validation_split: float = .2):
     x_data, y_data = [], []
 
     def load(_filename, _path, num_classes):
@@ -39,8 +39,8 @@ def load_data(shuffle: bool = True, validation_split: float = .2):
 
                 label_tensor[grid_y, grid_x, 0] = x
                 label_tensor[grid_y, grid_x, 1] = y
-                label_tensor[grid_y, grid_x, 2] = w
-                label_tensor[grid_y, grid_x, 3] = h
+                label_tensor[grid_y, grid_x, 2] = w / (anchor_width / grid_width_ratio)
+                label_tensor[grid_y, grid_x, 3] = h / (anchor_height / grid_height_ratio)
                 label_tensor[grid_y, grid_x, 4] = 1.
                 label_tensor[grid_y, grid_x, 5 + int(c)] = 1.
         y_data.append(label_tensor)

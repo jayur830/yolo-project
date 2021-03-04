@@ -1,10 +1,15 @@
 import tensorflow as tf
 
-from losses import yolo_loss, yolo_mean_squared_log_error, YoloLoss
+from losses import yolo_loss
 from loon.common import target_width, target_height
 
 
-def yolo_model(kernel_initializer: str = "he_normal"):
+def yolo_model(
+        num_classes: int,
+        kernel_initializer: str = "he_normal",
+        learning_rate: float = 1e-3,
+        bn_momentum: float = .9,
+        lrelu_alpha: float = .1):
     input_layer = tf.keras.layers.Input(shape=(target_height, target_width, 3))
 
     # (128, 512, 3) -> (128, 512, 8)
@@ -14,15 +19,15 @@ def yolo_model(kernel_initializer: str = "he_normal"):
         padding="same",
         kernel_initializer=kernel_initializer,
         use_bias=False)(input_layer)
-    model = tf.keras.layers.BatchNormalization()(model)
-    model = tf.keras.layers.LeakyReLU(alpha=1e-2)(model)
+    model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
+    model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     model = tf.keras.layers.DepthwiseConv2D(
         kernel_size=3,
         padding="same",
         kernel_initializer=kernel_initializer,
         use_bias=False)(model)
-    model = tf.keras.layers.BatchNormalization()(model)
-    model = tf.keras.layers.LeakyReLU(alpha=1e-2)(model)
+    model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
+    model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (128, 512, 8) -> (64, 256, 8)
     model = tf.keras.layers.MaxPool2D()(model)
     # (64, 256, 8) -> (64, 256, 16)
@@ -32,15 +37,15 @@ def yolo_model(kernel_initializer: str = "he_normal"):
         padding="same",
         kernel_initializer=kernel_initializer,
         use_bias=False)(model)
-    model = tf.keras.layers.BatchNormalization()(model)
-    model = tf.keras.layers.LeakyReLU(alpha=1e-2)(model)
+    model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
+    model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     model = tf.keras.layers.DepthwiseConv2D(
         kernel_size=3,
         padding="same",
         kernel_initializer=kernel_initializer,
         use_bias=False)(model)
-    model = tf.keras.layers.BatchNormalization()(model)
-    model = tf.keras.layers.LeakyReLU(alpha=1e-2)(model)
+    model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
+    model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (64, 256, 16) -> (32, 128, 16)
     model = tf.keras.layers.MaxPool2D()(model)
     # (32, 128, 16) -> (32, 128, 32)
@@ -50,33 +55,34 @@ def yolo_model(kernel_initializer: str = "he_normal"):
         padding="same",
         kernel_initializer=kernel_initializer,
         use_bias=False)(model)
-    model = tf.keras.layers.BatchNormalization()(model)
-    model = tf.keras.layers.LeakyReLU(alpha=1e-2)(model)
+    model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
+    model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     model = tf.keras.layers.DepthwiseConv2D(
         kernel_size=3,
         padding="same",
         kernel_initializer=kernel_initializer,
         use_bias=False)(model)
-    model = tf.keras.layers.BatchNormalization()(model)
-    model = tf.keras.layers.LeakyReLU(alpha=1e-2)(model)
+    model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
+    model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (32, 128, 32) -> (16, 64, 32)
     model = tf.keras.layers.MaxPool2D()(model)
     # (16, 64, 32) -> (16, 64, 9)
     model = tf.keras.layers.Conv2D(
-        filters=9,
+        filters=5 + num_classes,
         kernel_size=1,
         kernel_initializer=kernel_initializer)(model)
-    model = tf.keras.layers.Activation(tf.keras.activations.sigmoid)(model)
+    """
+    x, y: sigmoid
+    w, h: exp
+    confidence, classes: sigmoid
+    """
+    model = tf.keras.layers.Lambda(lambda x: tf.concat([tf.sigmoid(x[:, :, :, :2]), tf.exp(x[:, :, :, 2:4]), tf.sigmoid(x[:, :, :, 4:])], axis=-1))(model)
 
     model = tf.keras.models.Model(input_layer, model)
 
     model.summary()
     model.compile(
-        optimizer=tf.optimizers.Adam(learning_rate=1e-3),
+        optimizer=tf.optimizers.Adam(learning_rate=learning_rate),
         loss=yolo_loss)
 
     return model
-
-
-if __name__ == '__main__':
-    tf.keras.utils.plot_model(yolo_model(), show_shapes=True)

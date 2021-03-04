@@ -1,83 +1,88 @@
 import tensorflow as tf
 
 from losses import yolo_loss
-from traffic_signs.common import path, target_width, target_height, grid_width_ratio, grid_height_ratio
+from traffic_signs.common import target_width, target_height, grid_width_ratio, grid_height_ratio
 
 
 import os
 os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = 'true'
 
 
-def traffic_sign_model(
-        kernel_initializer="he_normal",
-        learning_rate=1e-3):
-    with open(f"{path}/classes.names") as reader:
-        classes = [class_name[:-1] for class_name in reader.readlines()]
-
+def yolo_model(
+        num_classes: int,
+        kernel_initializer: str = "he_normal",
+        learning_rate: float = 1e-3,
+        bn_momentum: float = .9,
+        lrelu_alpha: float = .1):
     # (256, 512, 3)
     input_layer = tf.keras.layers.Input(shape=(target_height, target_width, 3))
     # (256, 512, 3) -> (128, 256, 8)
-    x = tf.keras.layers.SeparableConv2D(
+    model = tf.keras.layers.SeparableConv2D(
         filters=8,
         kernel_size=3,
         padding="same",
         strides=2,
         kernel_initializer=kernel_initializer,
         use_bias=False)(input_layer)
-    x = tf.keras.layers.BatchNormalization(momentum=.9)(x)
-    x = tf.keras.layers.LeakyReLU(alpha=.1)(x)
+    model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
+    model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (128, 256, 8) -> (64, 128, 16)
-    x = tf.keras.layers.SeparableConv2D(
+    model = tf.keras.layers.SeparableConv2D(
         filters=16,
         kernel_size=3,
         padding="same",
         strides=2,
         kernel_initializer=kernel_initializer,
-        use_bias=False)(x)
-    x = tf.keras.layers.BatchNormalization(momentum=.9)(x)
-    x = tf.keras.layers.LeakyReLU(alpha=.1)(x)
+        use_bias=False)(model)
+    model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
+    model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (64, 128, 16) -> (32, 64, 32)
-    x = tf.keras.layers.SeparableConv2D(
+    model = tf.keras.layers.SeparableConv2D(
         filters=32,
         kernel_size=3,
         padding="same",
         strides=2,
         kernel_initializer=kernel_initializer,
-        use_bias=False)(x)
-    x = tf.keras.layers.BatchNormalization(momentum=.9)(x)
-    x = tf.keras.layers.LeakyReLU(alpha=.1)(x)
+        use_bias=False)(model)
+    model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
+    model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (32, 64, 32) -> (16, 32, 64)
-    x = tf.keras.layers.SeparableConv2D(
+    model = tf.keras.layers.SeparableConv2D(
         filters=64,
         kernel_size=3,
         padding="same",
         strides=2,
         kernel_initializer=kernel_initializer,
-        use_bias=False)(x)
-    x = tf.keras.layers.BatchNormalization(momentum=.9)(x)
-    x = tf.keras.layers.LeakyReLU(alpha=.1)(x)
+        use_bias=False)(model)
+    model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
+    model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (16, 32, 64) -> (8, 16, 128)
-    x = tf.keras.layers.SeparableConv2D(
+    model = tf.keras.layers.SeparableConv2D(
         filters=128,
         kernel_size=3,
         padding="same",
         strides=2,
         kernel_initializer=kernel_initializer,
-        use_bias=False)(x)
-    x = tf.keras.layers.BatchNormalization(momentum=.9)(x)
-    x = tf.keras.layers.LeakyReLU(alpha=.1)(x)
+        use_bias=False)(model)
+    model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
+    model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (8, 16, 128) -> (8, 16, 5 + num_classes)
-    x = tf.keras.layers.SeparableConv2D(
-        filters=5 + len(classes),
+    model = tf.keras.layers.SeparableConv2D(
+        filters=5 + num_classes,
         kernel_size=1,
-        kernel_initializer=kernel_initializer)(x)
-    x = tf.keras.layers.Activation(tf.keras.activations.sigmoid)(x)
+        kernel_initializer=kernel_initializer)(model)
+    """
+    x, y: sigmoid
+    w, h: exp
+    confidence, classes: sigmoid
+    """
+    model = tf.keras.layers.Lambda(lambda x: tf.concat([tf.sigmoid(x[:, :, :, :2]), tf.exp(x[:, :, :, 2:4]), tf.sigmoid(x[:, :, :, 4:])], axis=-1))(model)
 
-    _model = tf.keras.models.Model(input_layer, x)
-    _model.compile(
+    model = tf.keras.models.Model(input_layer, model)
+
+    model.summary()
+    model.compile(
         optimizer=tf.optimizers.Adam(learning_rate=learning_rate),
-        loss=yolo_loss,
-        metrics=[tf.metrics.Recall()])
-    _model.summary()
+        loss=yolo_loss)
 
-    return _model
+    return model
