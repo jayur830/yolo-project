@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from losses import yolo_loss, yolo_mean_absolute_log_error, yolo_mean_squared_log_error, YoloLoss
+from losses import yolo_loss
 from lpr.common import target_width, target_height
 
 

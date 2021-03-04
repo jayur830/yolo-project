@@ -4,76 +4,82 @@ from losses import yolo_loss
 from wildlife.common import target_width, target_height
 
 
-def model(
+def yolo_model(
         num_classes: int,
-        kernel_initializer="he_normal",
-        bn_momentum=.9,
-        lrelu_alpha=.1,
-        learning_rate=1e-2):
+        kernel_initializer: str = "he_normal",
+        learning_rate: float = 1e-3,
+        bn_momentum: float = .9,
+        lrelu_alpha: float = .1):
     # (416, 416, 3)
     input_layer = tf.keras.layers.Input(shape=(target_height, target_width, 3))
+
     # (416, 416, 3) -> (208, 208, 8)
-    x = tf.keras.layers.SeparableConv2D(
+    model = tf.keras.layers.SeparableConv2D(
         filters=8,
         kernel_size=3,
         padding="same",
         strides=2,
         kernel_initializer=kernel_initializer,
         use_bias=False)(input_layer)
-    x = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(x)
-    x = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(x)
+    model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
+    model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (208, 208, 8) -> (104, 104, 16)
-    x = tf.keras.layers.SeparableConv2D(
+    model = tf.keras.layers.SeparableConv2D(
         filters=16,
         kernel_size=3,
         padding="same",
         strides=2,
         kernel_initializer=kernel_initializer,
-        use_bias=False)(x)
-    x = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(x)
-    x = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(x)
+        use_bias=False)(model)
+    model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
+    model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (104, 104, 16) -> (52, 52, 32)
-    x = tf.keras.layers.SeparableConv2D(
+    model = tf.keras.layers.SeparableConv2D(
         filters=32,
         kernel_size=3,
         padding="same",
         strides=2,
         kernel_initializer=kernel_initializer,
-        use_bias=False)(x)
-    x = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(x)
-    x = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(x)
+        use_bias=False)(model)
+    model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
+    model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (52, 52, 32) -> (26, 26, 64)
-    x = tf.keras.layers.SeparableConv2D(
+    model = tf.keras.layers.SeparableConv2D(
         filters=64,
         kernel_size=3,
         padding="same",
         strides=2,
         kernel_initializer=kernel_initializer,
-        use_bias=False)(x)
-    x = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(x)
-    x = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(x)
+        use_bias=False)(model)
+    model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
+    model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (26, 26, 64) -> (13, 13, 128)
-    x = tf.keras.layers.SeparableConv2D(
+    model = tf.keras.layers.SeparableConv2D(
         filters=128,
         kernel_size=3,
         padding="same",
         strides=2,
         kernel_initializer=kernel_initializer,
-        use_bias=False)(x)
-    x = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(x)
-    x = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(x)
+        use_bias=False)(model)
+    model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
+    model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (13, 13, 128) -> (13, 13, 5 + num_classes)
-    x = x = tf.keras.layers.Conv2D(
+    model = tf.keras.layers.Conv2D(
         filters=5 + num_classes,
         kernel_size=1,
-        kernel_initializer=kernel_initializer)(x)
-    x = tf.keras.layers.Activation(tf.keras.activations.sigmoid)(x)
+        kernel_initializer=kernel_initializer)(model)
+    """
+    x, y: sigmoid
+    w, h: exp
+    confidence, classes: sigmoid
+    """
+    model = tf.keras.layers.Lambda(lambda x: tf.concat([tf.sigmoid(x[:, :, :, :2]), tf.exp(x[:, :, :, 2:4]), tf.sigmoid(x[:, :, :, 4:])], axis=-1))(model)
 
-    model = tf.keras.models.Model(input_layer, x)
+    model = tf.keras.models.Model(input_layer, model)
+
+    model.summary()
     model.compile(
         optimizer=tf.optimizers.Adam(learning_rate=learning_rate),
-        loss=yolo_loss,
-        metrics=[tf.metrics.Recall()])
-    model.summary()
+        loss=yolo_loss)
 
     return model

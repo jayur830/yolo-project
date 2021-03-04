@@ -10,7 +10,8 @@ def yolo_model(
         learning_rate: float = 1e-3,
         bn_momentum: float = .9,
         lrelu_alpha: float = .1):
-    input_layer = tf.keras.layers.Input(shape=(target_height, target_width, 3)),
+    input_layer = tf.keras.layers.Input(shape=(target_height, target_width, 3))
+
     # (224, 224, 3) -> (224, 224, 8)
     model = tf.keras.layers.Conv2D(
         filters=8,

@@ -1,11 +1,7 @@
 import tensorflow as tf
 
 from losses import yolo_loss
-from traffic_signs.common import target_width, target_height, grid_width_ratio, grid_height_ratio
-
-
-import os
-os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = 'true'
+from traffic_signs.common import target_width, target_height
 
 
 def yolo_model(
@@ -16,6 +12,7 @@ def yolo_model(
         lrelu_alpha: float = .1):
     # (256, 512, 3)
     input_layer = tf.keras.layers.Input(shape=(target_height, target_width, 3))
+
     # (256, 512, 3) -> (128, 256, 8)
     model = tf.keras.layers.SeparableConv2D(
         filters=8,
