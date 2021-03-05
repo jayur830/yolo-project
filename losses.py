@@ -1,5 +1,7 @@
 import tensorflow as tf
 
+from tensorflow.python.framework.ops import convert_to_tensor_v2
+
 
 def sum_squared_error(y_true, y_pred, axis=None):
     return tf.reduce_sum(tf.square(y_true - y_pred), axis=axis)
@@ -56,24 +58,44 @@ def yolo_loss_iou(y_true, y_pred):
     return intersection / (y_true_area + y_pred_area - intersection)
 
 
-def yolo_loss(y_true, y_pred):
-    from tensorflow.python.framework.ops import convert_to_tensor_v2
-    y_pred = convert_to_tensor_v2(y_pred)
-    y_true = tf.cast(y_true, y_pred.dtype)
-
-    lambda_coord, lambda_noobj = 5., .5
+def yolo_localization_loss(y_true, y_pred):
+    lambda_coord = 5.
     confidence_channel = y_true[:, :, :, 4]
 
     xy_loss = lambda_coord * tf.reduce_sum(sum_squared_error(y_true[:, :, :, :2], y_pred[:, :, :, :2], axis=-1) * confidence_channel)
     # xy_loss = 0.
     wh_loss = lambda_coord * tf.reduce_sum(sum_squared_error(y_true[:, :, :, 2:4], y_pred[:, :, :, 2:4], axis=-1) * confidence_channel)
     # wh_loss = 0.
+
+    return xy_loss + wh_loss
+
+
+def yolo_confidence_loss(y_true, y_pred):
+    lambda_noobj = .5
+    confidence_channel = y_true[:, :, :, 4]
+
     confidence_loss = tf.reduce_sum(
         tf.square(y_true[:, :, :, 4] - y_pred[:, :, :, 4]) * tf.where(
             tf.cast(confidence_channel, dtype=tf.bool),
             tf.ones(shape=tf.shape(input=confidence_channel)),
             tf.ones(shape=tf.shape(input=confidence_channel)) * lambda_noobj))
     # confidence_loss = 0.
+
+    return confidence_loss
+
+
+def yolo_classification_loss(y_true, y_pred):
+    confidence_channel = y_true[:, :, :, 4]
+
     class_loss = tf.reduce_sum(sum_squared_error(y_true[:, :, :, 5:], y_pred[:, :, :, 5:], axis=-1) * confidence_channel)
     # class_loss = 0.
-    return xy_loss + wh_loss + confidence_loss + class_loss
+    return class_loss
+
+
+def yolo_loss(y_true, y_pred):
+    y_pred = convert_to_tensor_v2(y_pred)
+    y_true = tf.cast(y_true, y_pred.dtype)
+
+    return yolo_localization_loss(y_true, y_pred) + \
+           yolo_confidence_loss(y_true, y_pred) + \
+           yolo_classification_loss(y_true, y_pred)

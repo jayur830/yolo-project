@@ -104,8 +104,7 @@ def on_batch_end(
         target_height,
         grid_width_ratio,
         grid_height_ratio,
-        anchor_width,
-        anchor_height,
+        anchors,
         step_interval):
     def _on_batch_end(_1, logs):
         global step
@@ -124,8 +123,8 @@ def on_batch_end(
                 c_x, c_y, t_x, t_y, t_w, t_h, class_index = vector
                 b_x = (t_x + c_x) * target_width / grid_width_ratio
                 b_y = (t_y + c_y) * target_height / grid_height_ratio
-                b_w = t_w * target_width * anchor_width / grid_width_ratio
-                b_h = t_h * target_height * anchor_height / grid_height_ratio
+                b_w = t_w * target_width * anchors[0] / grid_width_ratio
+                b_h = t_h * target_height * anchors[1] / grid_height_ratio
                 x1, y1, x2, y2 = int(b_x - b_w * .5), int(b_y - b_h * .5), int(b_x + b_w * .5), int(b_y + b_h * .5)
 
                 img = cv2.rectangle(
@@ -217,8 +216,7 @@ def train(
         target_height: int,
         grid_width_ratio: int,
         grid_height_ratio: int,
-        anchor_width: float,
-        anchor_height: float,
+        anchors: [float],
         epochs: int,
         batch_size: int):
     os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
@@ -229,8 +227,8 @@ def train(
         target_height=target_height,
         grid_width_ratio=grid_width_ratio,
         grid_height_ratio=grid_height_ratio,
-        anchor_width=anchor_width,
-        anchor_height=anchor_height)
+        anchor_width=anchors[0],
+        anchor_height=anchors[1])
     model = model_function(len(classes))
 
     model.fit(
@@ -248,8 +246,7 @@ def train(
             target_height=target_height,
             grid_width_ratio=grid_width_ratio,
             grid_height_ratio=grid_height_ratio,
-            anchor_width=anchor_width,
-            anchor_height=anchor_height,
+            anchors=anchors,
             step_interval=20))])
 
     model.save(filepath="model.h5")
@@ -263,5 +260,5 @@ def train(
         target_height=target_height,
         grid_width_ratio=grid_width_ratio,
         grid_height_ratio=grid_height_ratio,
-        anchor_width=anchor_width,
-        anchor_height=anchor_height)
+        anchor_width=anchors[0],
+        anchor_height=anchors[1])
