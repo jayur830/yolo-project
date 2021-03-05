@@ -64,8 +64,7 @@ if __name__ == '__main__':
         target_height=target_height,
         grid_width_ratio=grid_width_ratio,
         grid_height_ratio=grid_height_ratio,
-        anchor_width=anchor_width,
-        anchor_height=anchor_height,
+        anchors=anchors,    # 2D List, [[w, h]]
         epochs=epochs,
         batch_size=batch_size)
 ```

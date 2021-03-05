@@ -10,6 +10,6 @@ if __name__ == '__main__':
         target_height=256,
         grid_width_ratio=16,
         grid_height_ratio=8,
-        anchors=[3, 2],
+        anchors=[[3, 2]],
         epochs=100,
         batch_size=2)

@@ -1,7 +1,6 @@
 import tensorflow as tf
 
 from losses import yolo_loss
-from wildlife.common import target_width, target_height
 
 
 def yolo_model(
@@ -11,7 +10,7 @@ def yolo_model(
         bn_momentum: float = .9,
         lrelu_alpha: float = .1):
     # (416, 416, 3)
-    input_layer = tf.keras.layers.Input(shape=(target_height, target_width, 3))
+    input_layer = tf.keras.layers.Input(shape=(416, 416, 3))
 
     # (416, 416, 3) -> (208, 208, 8)
     model = tf.keras.layers.SeparableConv2D(
