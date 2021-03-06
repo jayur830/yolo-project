@@ -58,44 +58,57 @@ def yolo_loss_iou(y_true, y_pred):
     return intersection / (y_true_area + y_pred_area - intersection)
 
 
-def yolo_localization_loss(y_true, y_pred):
-    lambda_coord = 5.
-    confidence_channel = y_true[:, :, :, 4]
+class YOLOLoss(tf.keras.losses.Loss):
+    def __init__(self,
+                 anchors: [[float]],
+                 lambda_coord: float = 5.,
+                 lambda_noobj: float = .5):
+        super(YOLOLoss, self).__init__()
+        self.__anchors = anchors
+        self.__lambda_coord = lambda_coord
+        self.__lambda_noobj = lambda_noobj
 
-    xy_loss = lambda_coord * tf.reduce_sum(sum_squared_error(y_true[:, :, :, :2], y_pred[:, :, :, :2], axis=-1) * confidence_channel)
-    # xy_loss = 0.
-    wh_loss = lambda_coord * tf.reduce_sum(sum_squared_error(y_true[:, :, :, 2:4], y_pred[:, :, :, 2:4], axis=-1) * confidence_channel)
-    # wh_loss = 0.
+    def call(self, y_true, y_pred):
+        y_pred = convert_to_tensor_v2(y_pred)
+        y_true = tf.cast(y_true, y_pred.dtype)
 
-    return xy_loss + wh_loss
+        return self.__localization_loss(y_true, y_pred) + \
+               self.__confidence_loss(y_true, y_pred) + \
+               self.__classification_loss(y_true, y_pred)
 
+    def __localization_loss(self, y_true: tf.Tensor, y_pred: tf.Tensor):
+        xywh_loss = 0
 
-def yolo_confidence_loss(y_true, y_pred):
-    lambda_noobj = .5
-    confidence_channel = y_true[:, :, :, 4]
+        for n in range(len(self.__anchors)):
+            confidence_channel = y_true[:, :, :, n * 5 + 4]
 
-    confidence_loss = tf.reduce_sum(
-        tf.square(y_true[:, :, :, 4] - y_pred[:, :, :, 4]) * tf.where(
-            tf.cast(confidence_channel, dtype=tf.bool),
-            tf.ones(shape=tf.shape(input=confidence_channel)),
-            tf.ones(shape=tf.shape(input=confidence_channel)) * lambda_noobj))
-    # confidence_loss = 0.
+            xy_loss = self.__lambda_coord * tf.reduce_sum(sum_squared_error(y_true[:, :, :, n * 5:n * 5 + 2], y_pred[:, :, :, n * 5:n * 5 + 2], axis=-1) * confidence_channel)
+            wh_loss = self.__lambda_coord * tf.reduce_sum(sum_squared_error(y_true[:, :, :, n * 5 + 2:n * 5 + 4] ** .5, y_pred[:, :, :, n * 5 + 2:n * 5 + 4] ** .5, axis=-1) * confidence_channel)
 
-    return confidence_loss
+            xywh_loss += xy_loss + wh_loss
 
+        return xywh_loss
+        # return 0
 
-def yolo_classification_loss(y_true, y_pred):
-    confidence_channel = y_true[:, :, :, 4]
+    def __confidence_loss(self, y_true: tf.Tensor, y_pred: tf.Tensor):
+        confidence_loss = 0
 
-    class_loss = tf.reduce_sum(sum_squared_error(y_true[:, :, :, 5:], y_pred[:, :, :, 5:], axis=-1) * confidence_channel)
-    # class_loss = 0.
-    return class_loss
+        for n in range(len(self.__anchors)):
+            confidence_channel = y_true[:, :, :, n * 5 + 4]
 
+            confidence_loss += tf.reduce_sum(
+                tf.square(y_true[:, :, :, n * 5 + 4] - y_pred[:, :, :, n * 5 + 4]) * tf.where(
+                    tf.cast(confidence_channel, dtype=tf.bool),
+                    tf.ones(shape=tf.shape(input=confidence_channel)),
+                    tf.ones(shape=tf.shape(input=confidence_channel)) * self.__lambda_noobj))
 
-def yolo_loss(y_true, y_pred):
-    y_pred = convert_to_tensor_v2(y_pred)
-    y_true = tf.cast(y_true, y_pred.dtype)
+        return confidence_loss
+        # return 0
 
-    return yolo_localization_loss(y_true, y_pred) + \
-           yolo_confidence_loss(y_true, y_pred) + \
-           yolo_classification_loss(y_true, y_pred)
+    def __classification_loss(self, y_true: tf.Tensor, y_pred: tf.Tensor):
+        confidence_channel = y_true[:, :, :, 4]
+
+        class_loss = tf.reduce_sum(sum_squared_error(y_true[:, :, :, 5 * len(self.__anchors):], y_pred[:, :, :, 5 * len(self.__anchors):], axis=-1) * confidence_channel)
+
+        return class_loss
+        # return 0

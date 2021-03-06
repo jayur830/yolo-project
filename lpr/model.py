@@ -1,9 +1,11 @@
 import tensorflow as tf
 
-from losses import yolo_loss
+from losses import YOLOLoss
+from output_layer import YOLOOutput
 
 
 def yolo_model(
+        anchors: [[float]],
         num_classes: int,
         kernel_initializer: str = "he_normal",
         learning_rate: float = 1e-3,
@@ -13,7 +15,7 @@ def yolo_model(
 
     # (368, 640, 3) -> (184, 320, 8)
     model = tf.keras.layers.Conv2D(
-        filters=8,
+        filters=4,
         kernel_size=3,
         padding="same",
         strides=2,
@@ -24,7 +26,7 @@ def yolo_model(
     model = tf.keras.layers.Dropout(rate=5e-2)(model)
     # (184, 320, 8) -> (92, 160, 16)
     model = tf.keras.layers.Conv2D(
-        filters=16,
+        filters=8,
         kernel_size=3,
         padding="same",
         strides=2,
@@ -34,7 +36,7 @@ def yolo_model(
     model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (92, 160, 16) -> (46, 80, 32)
     model = tf.keras.layers.Conv2D(
-        filters=32,
+        filters=16,
         kernel_size=3,
         padding="same",
         strides=2,
@@ -44,7 +46,7 @@ def yolo_model(
     model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (46, 80, 32) -> (23, 40, 64)
     model = tf.keras.layers.Conv2D(
-        filters=64,
+        filters=32,
         kernel_size=3,
         padding="same",
         strides=2,
@@ -54,21 +56,16 @@ def yolo_model(
     model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (23, 40, 64) -> (23, 40, 5)
     model = tf.keras.layers.Conv2D(
-        filters=5 + num_classes,
+        filters=5 * len(anchors) + num_classes,
         kernel_size=1,
         kernel_initializer=kernel_initializer)(model)
-    """
-    x, y: sigmoid
-    w, h: exp
-    confidence, classes: sigmoid
-    """
-    model = tf.keras.layers.Lambda(lambda x: tf.concat([tf.sigmoid(x[:, :, :, :2]), tf.exp(x[:, :, :, 2:4]), tf.sigmoid(x[:, :, :, 4:])], axis=-1))(model)
+    model = YOLOOutput(len(anchors))(model)
 
     model = tf.keras.models.Model(input_layer, model)
 
     model.summary()
     model.compile(
         optimizer=tf.optimizers.Adam(learning_rate=learning_rate),
-        loss=yolo_loss)
+        loss=YOLOLoss(anchors))
 
     return model

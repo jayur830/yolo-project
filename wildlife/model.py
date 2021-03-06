@@ -1,9 +1,11 @@
 import tensorflow as tf
 
-from losses import yolo_loss
+from losses import YOLOLoss
+from output_layer import YOLOOutput
 
 
 def yolo_model(
+        anchors: [[float]],
         num_classes: int,
         kernel_initializer: str = "he_normal",
         learning_rate: float = 1e-3,
@@ -13,7 +15,7 @@ def yolo_model(
     input_layer = tf.keras.layers.Input(shape=(416, 416, 3))
 
     # (416, 416, 3) -> (208, 208, 8)
-    model = tf.keras.layers.SeparableConv2D(
+    model = tf.keras.layers.Conv2D(
         filters=8,
         kernel_size=3,
         padding="same",
@@ -23,7 +25,7 @@ def yolo_model(
     model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
     model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (208, 208, 8) -> (104, 104, 16)
-    model = tf.keras.layers.SeparableConv2D(
+    model = tf.keras.layers.Conv2D(
         filters=16,
         kernel_size=3,
         padding="same",
@@ -33,7 +35,7 @@ def yolo_model(
     model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
     model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (104, 104, 16) -> (52, 52, 32)
-    model = tf.keras.layers.SeparableConv2D(
+    model = tf.keras.layers.Conv2D(
         filters=32,
         kernel_size=3,
         padding="same",
@@ -43,7 +45,7 @@ def yolo_model(
     model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
     model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (52, 52, 32) -> (26, 26, 64)
-    model = tf.keras.layers.SeparableConv2D(
+    model = tf.keras.layers.Conv2D(
         filters=64,
         kernel_size=3,
         padding="same",
@@ -53,7 +55,7 @@ def yolo_model(
     model = tf.keras.layers.BatchNormalization(momentum=bn_momentum)(model)
     model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (26, 26, 64) -> (13, 13, 128)
-    model = tf.keras.layers.SeparableConv2D(
+    model = tf.keras.layers.Conv2D(
         filters=128,
         kernel_size=3,
         padding="same",
@@ -64,21 +66,16 @@ def yolo_model(
     model = tf.keras.layers.LeakyReLU(alpha=lrelu_alpha)(model)
     # (13, 13, 128) -> (13, 13, 5 + num_classes)
     model = tf.keras.layers.Conv2D(
-        filters=5 + num_classes,
+        filters=5 * len(anchors) + num_classes,
         kernel_size=1,
         kernel_initializer=kernel_initializer)(model)
-    """
-    x, y: sigmoid
-    w, h: exp
-    confidence, classes: sigmoid
-    """
-    model = tf.keras.layers.Lambda(lambda x: tf.concat([tf.sigmoid(x[:, :, :, :2]), tf.exp(x[:, :, :, 2:4]), tf.sigmoid(x[:, :, :, 4:])], axis=-1))(model)
+    model = YOLOOutput(len(anchors))(model)
 
     model = tf.keras.models.Model(input_layer, model)
 
     model.summary()
     model.compile(
         optimizer=tf.optimizers.Adam(learning_rate=learning_rate),
-        loss=yolo_loss)
+        loss=YOLOLoss(anchors))
 
     return model

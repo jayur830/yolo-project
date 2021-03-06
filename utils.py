@@ -7,6 +7,8 @@ from tqdm import tqdm
 from glob import glob
 from concurrent.futures import ThreadPoolExecutor
 
+from output_layer import YOLOOutput
+
 
 def gpu_init():
     gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -54,7 +56,7 @@ def load_data(
         target_height: int,
         grid_width_ratio: int,
         grid_height_ratio: int,
-        anchors,
+        anchors: [[float]],
         shuffle: bool = True,
         validation_split: float = .2):
     x_data, y_data = [], []
@@ -272,7 +274,7 @@ def train(
         grid_width_ratio=grid_width_ratio,
         grid_height_ratio=grid_height_ratio,
         anchors=anchors)
-    model = model_function(len(classes))
+    model = model_function(anchors, len(classes))
 
     model.fit(
         x=x_train,
@@ -293,7 +295,12 @@ def train(
             step_interval=20))])
 
     model.save(filepath="model.h5")
-    model = tf.keras.models.load_model(filepath="model.h5", compile=False)
+    model = tf.keras.models.load_model(
+        filepath="model.h5",
+        custom_objects={
+            "YOLOOutput": YOLOOutput
+        },
+        compile=False)
 
     test(
         model=model,
