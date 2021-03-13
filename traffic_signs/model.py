@@ -8,7 +8,7 @@ def yolo_model(
         anchors: [[float]],
         num_classes: int,
         kernel_initializer: str = "he_normal",
-        learning_rate: float = 1e-3,
+        learning_rate: float = 1e-2,
         bn_momentum: float = .9,
         lrelu_alpha: float = .1):
     # (256, 512, 3)

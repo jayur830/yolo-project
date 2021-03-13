@@ -120,11 +120,6 @@ def load_data(
         return x_data, y_data
 
 
-@tf.function
-def predict(model: tf.keras.models.Model, x: np.ndarray):
-    return model(x)
-
-
 def high_confidence_vector(yolo_tensor: np.ndarray, anchors: [[float]], threshold: float = .5):
     if len(yolo_tensor.shape) != 3:
         return []
@@ -157,7 +152,7 @@ def view(
         dsize=(target_width, target_height),
         interpolation=cv2.INTER_AREA)
     x = x.reshape((1,) + x.shape)
-    output = np.asarray(predict(model, x))
+    output = np.asarray(model(x))
     vectors = high_confidence_vector(output[0], anchors)
     for vector in vectors:
         c_x, c_y, t_x, t_y, t_w, t_h, anchor_width, anchor_height, class_index = vector
@@ -177,14 +172,14 @@ def view(
 
         img = cv2.rectangle(
             img=img,
-            pt1=(round(x1), round(y1)),
-            pt2=(round(x2), round(y2)),
+            pt1=(int(round(x1)), int(round(y1))),
+            pt2=(int(round(x2)), int(round(y2))),
             color=(0, 0, 255),
             thickness=2)
         img = cv2.putText(
             img=img,
             text=classes[class_index],
-            org=(round(x1), round(y1) - 5),
+            org=(int(round(x1)), int(round(y1)) - 5),
             fontFace=cv2.FONT_HERSHEY_SIMPLEX,
             fontScale=.5,
             color=(0, 0, 255),
