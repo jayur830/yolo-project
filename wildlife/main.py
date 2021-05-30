@@ -11,5 +11,5 @@ if __name__ == '__main__':
         grid_width_ratio=13,
         grid_height_ratio=13,
         anchors=[[5, 5], [4, 4], [6, 6]],
-        epochs=100,
+        epochs=500,
         batch_size=2)
